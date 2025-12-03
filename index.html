@@ -2,57 +2,275 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Arix Signature Tree - For WQC</title>
     <style>
-        /* 纯净的黑底，没有Loading文字 */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000000; }
-        #canvas-container { width: 100vw; height: 100vh; background-color: #000000; }
-        .instruction {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #D4AF37;
-            font-family: 'Times New Roman', serif;
-            font-size: 14px;
-            letter-spacing: 2px;
-            opacity: 0.6;
-            pointer-events: none;
-            text-transform: uppercase;
-            z-index: 10;
+        body { margin: 0; padding: 0; background-color: #000; overflow: hidden; font-family: 'Times New Roman', serif; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #loading-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #D4AF37; font-size: 20px; letter-spacing: 4px; pointer-events: none;
+            transition: opacity 1s;
         }
-        /* 如果出错，显示在屏幕上的样式 */
-        #error-log {
-            position: absolute; top: 0; left: 0; color: red; background: rgba(0,0,0,0.8); padding: 20px; z-index: 999; pointer-events: none; white-space: pre-wrap;
+        .instruction {
+            position: absolute; bottom: 30px; width: 100%; text-align: center;
+            color: #D4AF37; font-size: 12px; letter-spacing: 2px; opacity: 0.5; pointer-events: none;
+            text-transform: uppercase;
         }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "react": "https://esm.sh/react@18.2.0",
-                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-                "three": "https://esm.sh/three@0.160.0",
-                "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-                "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber"
-            }
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="canvas-container"></div>
-    <div class="instruction">Click / Tap to Interact</div>
-    <div id="error-log"></div>
+    <div id="loading-text">INITIALIZING...</div>
+    <div class="instruction">Click to Interact</div>
 
     <script>
-        window.addEventListener('error', function(event) {
-            const errorBox = document.getElementById('error-log');
-            errorBox.textContent += `[System Error]: ${event.message} \n(Check network connection to esm.sh)\n\n`;
-        });
-        window.addEventListener('unhandledrejection', function(event) {
-            const errorBox = document.getElementById('error-log');
-            errorBox.textContent += `[Promise Error]: ${event.reason} \n`;
-        });
-    </script>
+        // --- 全局变量配置 ---
+        const CONFIG = {
+            count: 2500,
+            goldColor: 0xFFD700,
+            emeraldColor: 0x001a14,
+            treeHeight: 14,
+            treeRadius: 5,
+            scatterRadius: 30
+        };
 
-    <script type
+        // --- 核心逻辑 ---
+        window.onload = function() {
+            try {
+                init();
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        };
+
+        let scene, camera, renderer, particles, dummy, textSprite;
+        let positionsTree = [], positionsScatter = [];
+        let state = { active: false, t: 0 }; // t: 0=scatter, 1=tree
+        let clock = new THREE.Clock();
+
+        function init() {
+            // 1. 场景搭建
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(CONFIG.emeraldColor);
+            scene.fog = new THREE.FogExp2(CONFIG.emeraldColor, 0.02);
+
+            // 2. 相机
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 25);
+
+            // 3. 渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            // 4. 灯光 (模拟金碧辉煌)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+
+            const spotLight = new THREE.SpotLight(0xfff0dd, 5);
+            spotLight.position.set(10, 30, 20);
+            spotLight.angle = 0.5;
+            spotLight.penumbra = 0.5;
+            scene.add(spotLight);
+
+            const purpleLight = new THREE.PointLight(0x8800ff, 2, 50);
+            purpleLight.position.set(-10, -10, 10);
+            scene.add(purpleLight);
+
+            const goldLight = new THREE.PointLight(0xffaa00, 2, 50);
+            goldLight.position.set(10, 0, 10);
+            scene.add(goldLight);
+
+            // 5. 创建 "TO WQC" 纹理 (Canvas绘制，不依赖外部字体文件)
+            const textTexture = createTextTexture("TO WQC");
+            const textMat = new THREE.SpriteMaterial({ 
+                map: textTexture, 
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.8
+            });
+            textSprite = new THREE.Sprite(textMat);
+            textSprite.scale.set(6, 3, 1); // 调整宽高比
+            textSprite.position.set(4, -5, 2);
+            scene.add(textSprite);
+
+            // 6. 粒子系统 (InstancedMesh)
+            const geometry = new THREE.OctahedronGeometry(0.12, 0);
+            const material = new THREE.MeshPhysicalMaterial({
+                color: CONFIG.goldColor,
+                metalness: 0.9,
+                roughness: 0.1,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
+                emissive: 0xaa4400,
+                emissiveIntensity: 0.2
+            });
+
+            particles = new THREE.InstancedMesh(geometry, material, CONFIG.count);
+            
+            // 预计算坐标
+            dummy = new THREE.Object3D();
+            const color = new THREE.Color();
+            
+            for(let i = 0; i < CONFIG.count; i++) {
+                // A. 树形坐标
+                const ratio = i / CONFIG.count;
+                const angle = i * 2.4;
+                const r = (1 - ratio) * CONFIG.treeRadius; // 下宽上窄 -> 上宽下窄? No, ratio 0 is top.
+                // Re-map: 0 is top of array. 
+                // Let's make ratio 0 = top (y positive), ratio 1 = bottom (y negative)
+                const y = THREE.MathUtils.lerp(CONFIG.treeHeight/2, -CONFIG.treeHeight/2, ratio);
+                const radius = THREE.MathUtils.lerp(0, CONFIG.treeRadius, ratio);
+                
+                positionsTree.push(
+                    Math.cos(angle) * (radius + Math.random()*0.5),
+                    y,
+                    Math.sin(angle) * (radius + Math.random()*0.5)
+                );
+
+                // B. 散落坐标 (球体)
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                const rad = CONFIG.scatterRadius * Math.cbrt(Math.random());
+                
+                positionsScatter.push(
+                    rad * Math.sin(phi) * Math.cos(theta),
+                    rad * Math.sin(phi) * Math.sin(theta),
+                    rad * Math.cos(phi)
+                );
+                
+                // 初始化在散落位置
+                dummy.position.set(positionsScatter[i*3], positionsScatter[i*3+1], positionsScatter[i*3+2]);
+                dummy.updateMatrix();
+                particles.setMatrixAt(i, dummy.matrix);
+            }
+            
+            scene.add(particles);
+
+            // 7. 星空背景
+            createStars();
+
+            // 8. 交互事件
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('click', () => { state.active = !state.active; });
+            window.addEventListener('touchstart', (e) => { e.preventDefault(); state.active = !state.active; }, {passive: false});
+
+            // 移除 Loading
+            document.getElementById('loading-text').style.opacity = 0;
+            
+            // 开始动画
+            animate();
+        }
+
+        // --- 辅助函数：绘制文字纹理 ---
+        function createTextTexture(message) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024; 
+            canvas.height = 512;
+            
+            // 发光效果
+            ctx.shadowColor = "#FFD700";
+            ctx.shadowBlur = 20;
+            
+            ctx.fillStyle = "rgba(0,0,0,0)"; // 透明背景
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            
+            ctx.font = "bold 120px 'Times New Roman', serif";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(message, canvas.width/2, canvas.height/2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        function createStars() {
+            const starGeo = new THREE.BufferGeometry();
+            const starCount = 3000;
+            const pos = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount*3; i++) {
+                pos[i] = (Math.random() - 0.5) * 100;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.2, transparent: true, opacity: 0.6});
+            const stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- 动画循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // 1. 状态插值 (Lerp)
+            const targetT = state.active ? 1 : 0;
+            state.t += (targetT - state.t) * 2.0 * delta; // 速度系数
+
+            // 2. 更新粒子
+            if (particles) {
+                for (let i = 0; i < CONFIG.count; i++) {
+                    const i3 = i * 3;
+                    
+                    // 获取当前插值位置
+                    const sx = positionsScatter[i3], sy = positionsScatter[i3+1], sz = positionsScatter[i3+2];
+                    const tx = positionsTree[i3], ty = positionsTree[i3+1], tz = positionsTree[i3+2];
+
+                    let x = sx + (tx - sx) * state.t;
+                    let y = sy + (ty - sy) * state.t;
+                    let z = sz + (tz - sz) * state.t;
+
+                    // 呼吸效果 (仅在变成树的时候)
+                    if (state.t > 0.8) {
+                        x += Math.cos(time + ty) * 0.02;
+                        z += Math.sin(time + ty) * 0.02;
+                    }
+
+                    dummy.position.set(x, y, z);
+                    
+                    // 自转
+                    dummy.rotation.set(Math.sin(time*0.5 + i), Math.cos(time*0.3 + i), 0);
+                    
+                    // 缩放特效 (切换时变大一下)
+                    const scaleEffect = 1 + Math.sin(state.t * Math.PI) * 0.5;
+                    dummy.scale.setScalar(scaleEffect * (0.5 + Math.random()*0.5));
+
+                    dummy.updateMatrix();
+                    particles.setMatrixAt(i, dummy.matrix);
+                }
+                particles.instanceMatrix.needsUpdate = true;
+                // 整体缓慢旋转
+                particles.rotation.y = time * 0.05;
+            }
+
+            // 3. 文字浮动动画
+            if(textSprite) {
+                textSprite.position.y = -5 + Math.sin(time * 1.5) * 0.3;
+                // 出现/消失
+                const scaleTarget = state.active ? 1 : 0;
+                // 简单的平滑过渡
+                const currentScale = textSprite.scale.x; 
+                // 基础scale是6，所以我们在0和6之间插值
+                // 这里简单处理：如果active，保持显示，否则慢慢变小（可选，目前一直显示也挺好看）
+            }
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
