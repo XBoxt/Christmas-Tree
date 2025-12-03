@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arix Signature Tree - For WQC</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #001a14; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        .instruction {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4AF37;
+            font-family: 'Times New Roman', serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            pointer-events: none;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "three": "https://esm.sh/three@0.160.0",
+                "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
+                "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber",
+                "maath/random/dist/maath-random.esm": "https://esm.sh/maath@0.10.7/random/dist/maath-random.esm",
+                "uuid": "https://esm.sh/uuid@9.0.1"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="instruction">Click / Tap to Interact</div>
+
+    <script type="module">
+        import React, { useState, useMemo, useRef, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import * as THREE from 'three';
+        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+        import { Text, OrbitControls, Environment, Float, Sparkles, Stars } from '@react-three/drei';
+        import * as random from 'maath/random/dist/maath-random.esm';
+
+        // --- 1. CONFIGURATION: Luxury & Scale ---
+        const CONFIG = {
+            count: 2000, // Number of particles
+            color: new THREE.Color("#FFD700"), // Gold
+            emissive: new THREE.Color("#FF8C00"), // Deep Orange/Gold Glow
+            bgColor: "#001a14", // Deep Emerald
+            treeHeight: 12,
+            treeRadius: 4.5,
+            scatterRadius: 25
+        };
+
+        // --- 2. MATH: Dual Position Generator ---
+        const generatePositions = (count) => {
+            const treePositions = new Float32Array(count * 3);
+            const scatterPositions = new Float32Array(count * 3);
+
+            for (let i = 0; i < count; i++) {
+                // A. Tree Shape (Spiral Cone)
+                const i3 = i * 3;
+                const ratio = i / count; // 0 to 1 (top to bottom)
+                
+                // Cone math: radius gets larger as we go down
+                const y = THREE.MathUtils.lerp(CONFIG.treeHeight / 2, -CONFIG.treeHeight / 2, ratio);
+                const radius = THREE.MathUtils.lerp(0, CONFIG.treeRadius, ratio);
+                
+                // Golden Angle Spiral for organic look
+                const angle = i * 2.4; 
+                
+                // Add some "noise" to make it look like hanging ornaments, not a perfect laser cone
+                const randomOffset = Math.random() * 0.5;
+
+                treePositions[i3] = Math.cos(angle) * (radius + randomOffset);
+                treePositions[i3 + 1] = y;
+                treePositions[i3 + 2] = Math.sin(angle) * (radius + randomOffset);
+
+                // B. Scattered Shape (Sphere Universe)
+                const r = CONFIG.scatterRadius * Math.cbrt(Math.random());
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                scatterPositions[i3] = r * Math.sin(phi) * Math.cos(theta);
+                scatterPositions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                scatterPositions[i3 + 2] = r * Math.cos(phi);
+            }
+            return { treePositions, scatterPositions };
+        };
+
+        // --- 3. COMPONENT: The Morphing Jewel Tree ---
+        const JewelTree = ({ active }) => {
+            const meshRef = useRef();
+            const { treePositions, scatterPositions } = useMemo(() => generatePositions(CONFIG.count), []);
+            
+            // Re-usable temporary objects to avoid GC
+            const dummy = new THREE.Object3D();
+            const tempPos = new THREE.Vector3();
+            const targetPos = new THREE.Vector3();
+            
+            // Animation State (0 = scattered, 1 = tree)
+            const animVal = useRef(0);
+
+            useFrame((state, delta) => {
+                // Smooth transition logic (Lerp)
+                const target = active ? 1 : 0;
+                // Easing function: fast start, slow end
+                animVal.current = THREE.MathUtils.damp(animVal.current, target, 2.5, delta);
+
+                const t = animVal.current; 
+
+                for (let i = 0; i < CONFIG.count; i++) {
+                    const i3 = i * 3;
+
+                    // Interpolate positions
+                    const sx = scatterPositions[i3];
+                    const sy = scatterPositions[i3 + 1];
+                    const sz = scatterPositions[i3 + 2];
+
+                    const tx = treePositions[i3];
+                    const ty = treePositions[i3 + 1];
+                    const tz = treePositions[i3 + 2];
+
+                    // Current position
+                    tempPos.set(
+                        THREE.MathUtils.lerp(sx, tx, t),
+                        THREE.MathUtils.lerp(sy, ty, t),
+                        THREE.MathUtils.lerp(sz, tz, t)
+                    );
+
+                    // Add a subtle "breath" or "swirl" when in tree mode
+                    if (t > 0.8) {
+                        const time = state.clock.elapsedTime;
+                        const swirl = Math.sin(time * 0.5 + ty) * 0.1;
+                        tempPos.x += Math.cos(time + ty) * 0.05;
+                        tempPos.z += Math.sin(time + ty) * 0.05;
+                    }
+
+                    // Update Instance
+                    dummy.position.copy(tempPos);
+                    
+                    // Rotate individual gems for sparkle
+                    dummy.rotation.set(
+                        Math.sin(state.clock.elapsedTime * 0.2 + i),
+                        Math.cos(state.clock.elapsedTime * 0.3 + i),
+                        0
+                    );
+                    
+                    // Scale effect during transition (explode and shrink)
+                    const scale = 1 + (Math.sin(t * Math.PI) * 0.5); 
+                    dummy.scale.setScalar(scale * (Math.random() * 0.5 + 0.5));
+
+                    dummy.updateMatrix();
+                    meshRef.current.setMatrixAt(i, dummy.matrix);
+                }
+                meshRef.current.instanceMatrix.needsUpdate = true;
+            });
+
+            return (
+                <instancedMesh ref={meshRef} args={[null, null, CONFIG.count]}>
+                    {/* Diamond/Crystal Geometry */}
+                    <octahedronGeometry args={[0.15, 0]} />
+                    {/* Luxurious Gold Material */}
+                    <meshPhysicalMaterial 
+                        color={CONFIG.color}
+                        emissive={CONFIG.emissive}
+                        emissiveIntensity={2}
+                        metalness={0.9}
+                        roughness={0.1}
+                        clearcoat={1}
+                        clearcoatRoughness={0}
+                    />
+                </instancedMesh>
+            );
+        };
+
+        // --- 4. COMPONENT: The Signature Text ---
+        const SignatureText = ({ active }) => {
+            const groupRef = useRef();
+
+            useFrame((state) => {
+                const t = state.clock.elapsedTime;
+                // Floating animation
+                groupRef.current.position.y = -4 + Math.sin(t) * 0.2;
+                
+                // Opacity fade logic based on tree state (optional, but looks nice always on)
+                // Using scale to pop in
+                const targetScale = active ? 1 : 0.5;
+                groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+            });
+
+            return (
+                <group ref={groupRef} position={[3.5, -4, 2]} rotation={[0, -0.3, 0]}>
+                    <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+                        <Text
+                            font="https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtM.woff"
+                            fontSize={1.2}
+                            letterSpacing={0.1}
+                            lineHeight={1}
+                            textAlign="center"
+                        >
+                            TO WQC
+                            <meshStandardMaterial 
+                                color="#ffffff" 
+                                emissive="#FFD700"
+                                emissiveIntensity={0.8}
+                                toneMapped={false}
+                            />
+                        </Text>
+                    </Float>
+                </group>
+            );
+        };
+
+        // --- 5. COMPONENT: Scene Composition ---
+        const Scene = () => {
+            const [active, setActive] = useState(false);
+
+            // Toggle state on click
+            useEffect(() => {
+                const handleInteraction = () => setActive(prev => !prev);
+                window.addEventListener('click', handleInteraction);
+                window.addEventListener('touchstart', handleInteraction);
+                return () => {
+                    window.removeEventListener('click', handleInteraction);
+                    window.removeEventListener('touchstart', handleInteraction);
+                };
+            }, []);
+
+            return (
+                <>
+                    {/* Camera & Controls */}
+                    <perspectiveCamera position={[0, 0, 15]} fov={45} />
+                    <OrbitControls 
+                        enablePan={false} 
+                        enableZoom={false} // Lock zoom to keep the framing cinematic
+                        minPolarAngle={Math.PI / 2.5} 
+                        maxPolarAngle={Math.PI / 1.8}
+                        autoRotate={true}
+                        autoRotateSpeed={active ? 1.0 : 0.5}
+                    />
+
+                    {/* Lighting - Dramatic & Cinematic */}
+                    <ambientLight intensity={0.2} color="#004d33" />
+                    <spotLight 
+                        position={[10, 20, 10]} 
+                        angle={0.3} 
+                        penumbra={1} 
+                        intensity={200} 
+                        color="#ffebd6" 
+                        castShadow 
+                    />
+                    <pointLight position={[-10, -10, -10]} intensity={50} color="#00ff99" />
+
+                    {/* Environment Reflections */}
+                    <Environment preset="city" />
+
+                    {/* The Main Actor */}
+                    <group position={[0, 1, 0]}>
+                        <JewelTree active={active} />
+                    </group>
+
+                    {/* The Star on Top (Only visible when tree formed) */}
+                    <mesh position={[0, CONFIG.treeHeight / 2 + 1, 0]} scale={active ? 1 : 0}>
+                         <octahedronGeometry args={[0.6, 0]} />
+                         <meshBasicMaterial color="#FFF" />
+                         <Sparkles count={20} scale={4} size={2} speed={0.4} opacity={1} color="#FFF" />
+                    </mesh>
+
+                    {/* Signature */}
+                    <SignatureText active={active} />
+
+                    {/* Background Ambience */}
+                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                    <Sparkles count={200} scale={12} size={2} speed={0.4} opacity={0.5} color="#D4AF37" />
+                </>
+            );
+        };
+
+        // --- 6. RENDER ROOT ---
+        createRoot(document.getElementById('canvas-container')).render(
+            <Canvas
+                gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+                camera={{ position: [0, 0, 18], fov: 35 }}
+                dpr={[1, 2]} // Handle high DPI screens
+            >
+                <color attach="background" args={[CONFIG.bgColor]} />
+                {/* Fog for depth */}
+                <fog attach="fog" args={[CONFIG.bgColor, 10, 40]} />
+                <Scene />
+            </Canvas>
+        );
+    </script>
+</body>
+</html>
