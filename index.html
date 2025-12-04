@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For WQC | Romantic Christmas & Fireworks</title>
+    <title>For WQC | Romantic Christmas Final</title>
     <style>
         :root { --neon-pink: #ff69b4; --neon-gold: #ffd700; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; 
-            /* 背景调整：更深邃浪漫的紫红夜空基调 */
+            /* 浪漫的紫红渐变夜空 */
             background: radial-gradient(circle at 50% 40%, #3a0a1a 0%, #1a0510 50%, #020105 100%);
             overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
         
@@ -23,7 +23,6 @@
         }
         .btn:hover { background: rgba(255, 100, 150, 0.2); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 0, 100, 0.3); }
         .btn:active { transform: scale(0.95); }
-        /* 主按钮改为浪漫粉金色调 */
         .btn.primary { background: rgba(255, 105, 180, 0.2); border-color: var(--neon-pink); color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 105, 180, 0.3); }
         .btn.primary:hover { background: rgba(255, 105, 180, 0.3); box-shadow: 0 0 25px rgba(255, 105, 180, 0.5); }
 
@@ -34,6 +33,13 @@
 
         #error-log { position: absolute; top: 0; left: 0; width: 100%; background: rgba(255,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 1000; display: none; }
         @keyframes loadAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        
+        /* 修复 Emoji 样式的 CSS 类 */
+        .emoji-float {
+            font-size: 40px;
+            filter: drop-shadow(0 0 5px rgba(255, 105, 180, 0.8)); /* 增加一点粉色辉光 */
+            cursor: default;
+        }
     </style>
 
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -56,7 +62,7 @@
 <body>
     <div id="error-log"></div>
     <div id="loader">
-        <div class="loading-text">PREPARING SURPRISE</div>
+        <div class="loading-text">MERRY CHRISTMAS</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
     </div>
 
@@ -92,15 +98,15 @@
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { OrbitControls, Text3D, Center, Float, Sparkles, Text, Instance, Instances } from '@react-three/drei';
-        import { EffectComposer, Bloom, Vignette, chromaticAberration } from '@react-three/postprocessing';
+        import { OrbitControls, Text3D, Center, Float, Sparkles, Html, Instance, Instances } from '@react-three/drei';
+        // 修复：移除了错误的 chromaticAberration 引用
+        import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
-        // --- Audio Engine (不变) ---
+        // --- Audio Engine ---
         class AudioEngine {
             constructor() { 
                 this.ctx = null; this.analyser = null; this.dataArray = null;
                 this.nextNoteTime = 0; this.timerID = null;
-                // 稍微温柔一点的音色序列
                 this.notes = [{f:659,d:0.4},{f:587,d:0.4},{f:523,d:0.4},{f:392,d:0.8}, {f:523,d:0.4},{f:587,d:0.4},{f:659,d:0.4},{f:587,d:0.8}, {f:659,d:0.4},{f:698,d:0.4},{f:783,d:0.4},{f:880,d:0.8}, {f:783,d:0.4},{f:698,d:0.4},{f:659,d:0.4},{f:587,d:0.8}];
                 this.currentNoteIndex = 0;
             }
@@ -122,7 +128,6 @@
             playNote(note, time) {
                 if(note.f === 0) return;
                 const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-                // 使用 sine 波，声音更柔和浪漫
                 osc.type = 'sine'; osc.frequency.value = note.f;
                 osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
                 osc.start(time); gain.gain.setValueAtTime(0, time);
@@ -141,7 +146,7 @@
         }
         const audioSystem = new AudioEngine();
 
-        // --- CatVoxels (Cute Beads Tree) ---
+        // --- CatVoxels (The Tree) ---
         const CatVoxels = ({ count = 2500, colors, mode, isPlaying }) => {
             const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -195,49 +200,77 @@
             );
         };
 
-        // --- Decorations Component (Emoji) ---
-        const Decorations = ({ mode }) => {
-            const items = useMemo(() => {
-                const emojis = ['🧦', '🍬', '🍭', '🎀', '🔔', '🎁', '💖', '✨'];
-                const temp = [];
-                for(let i=0; i<50; i++) {
-                    const t = Math.random() * 0.9 + 0.05; 
-                    const angle = Math.random() * Math.PI * 2;
-                    const radius = (1 - t) * 16 * 1.25; 
-                    const y = t * 42 - 21;
-                    temp.push({ basePos: new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius), emoji: emojis[Math.floor(Math.random() * emojis.length)], scale: 1.5 + Math.random() * 0.8, rotationOffset: Math.random() * Math.PI * 2, bobSpeed: 0.5 + Math.random() });
-                }
-                return temp;
-            }, []);
+        // --- FIXED: Decorations with Html Component (Emoji Fix) ---
+        // 使用 Html transform 可以把 DOM 元素转换成 3D 场景中的对象，支持原生 Emoji
+        const EmojiItem = ({ item, time, mode }) => {
             const groupRef = useRef();
-            useFrame((state) => {
-                if(!groupRef.current || mode !== 'TREE') return;
-                const time = state.clock.elapsedTime;
-                groupRef.current.children.forEach((child, i) => {
-                    const item = items[i]; const pos = item.basePos.clone();
-                    pos.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.15);
-                    pos.y += Math.sin(time * item.bobSpeed + item.rotationOffset) * 0.4;
-                    child.position.copy(pos); child.lookAt(0, pos.y, 0); child.rotation.y += Math.PI; 
-                });
+            
+            useFrame(() => {
+                if(!groupRef.current) return;
+                // 1. 模拟树的旋转
+                const currentAngle = time * 0.15;
+                const radius = item.radius;
+                const x = Math.cos(item.angle + currentAngle) * radius;
+                const z = Math.sin(item.angle + currentAngle) * radius;
+                
+                // 2. 上下浮动
+                const y = item.y + Math.sin(time * item.bobSpeed) * 0.4;
+                
+                groupRef.current.position.set(x, y, z);
             });
-            if (mode !== 'TREE') return null;
+
             return (
                 <group ref={groupRef}>
-                    {items.map((item, i) => (
-                        <Text key={i} fontSize={item.scale} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#5a1a2c">
-                            {item.emoji}
-                        </Text>
-                    ))}
+                    {/* transform: 让它变成 3D 物体； occlude: 遇到遮挡物隐藏 */}
+                    <Html transform occlude distanceFactor={15} style={{ pointerEvents: 'none' }}>
+                         <div className="emoji-float">{item.emoji}</div>
+                    </Html>
                 </group>
             );
         };
 
-        // --- NEW: Top Heart Component (浪漫桃心) ---
+        const Decorations = ({ mode }) => {
+            const items = useMemo(() => {
+                const emojis = ['🧦', '🍬', '🍭', '🎀', '🔔', '🎁', '💖', '✨'];
+                const temp = [];
+                for(let i=0; i<45; i++) {
+                    const t = Math.random() * 0.9 + 0.05; 
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = (1 - t) * 16 * 1.25; 
+                    const y = t * 42 - 21;
+                    temp.push({ 
+                        radius, y, angle, 
+                        emoji: emojis[Math.floor(Math.random() * emojis.length)], 
+                        bobSpeed: 0.5 + Math.random() 
+                    });
+                }
+                return temp;
+            }, []);
+
+            if (mode !== 'TREE') return null;
+
+            return (
+                <>
+                   {items.map((item, i) => (
+                       <TimeWrapper key={i}>
+                           {(time) => <EmojiItem item={item} time={time} mode={mode} />}
+                       </TimeWrapper>
+                   ))}
+                </>
+            );
+        };
+
+        // Helper to pass time to children without prop drilling everything
+        const TimeWrapper = ({ children }) => {
+            const [time, setTime] = useState(0);
+            useFrame((state) => setTime(state.clock.elapsedTime));
+            return children(time);
+        };
+
+        // --- Top Heart Component ---
         const TopHeart = ({ isPlaying }) => {
             const heartRef = useRef();
             const lightRef = useRef();
-
-            // 创建爱心形状
             const heartShape = useMemo(() => {
                 const shape = new THREE.Shape();
                 const x = 0, y = 0;
@@ -250,33 +283,21 @@
                 shape.bezierCurveTo(x + 3.5, y, x + 2.5, y + 2.5, x + 2.5, y + 2.5);
                 return shape;
             }, []);
-
-            // 爱心挤压配置
-            const extrudeSettings = useMemo(() => ({
-                steps: 2, depth: 2, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.5, bevelSegments: 8
-            }), []);
+            const extrudeSettings = useMemo(() => ({ steps: 2, depth: 2, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.5, bevelSegments: 8 }), []);
 
             useFrame((state) => {
                 if (!heartRef.current) return;
                 const time = state.clock.elapsedTime;
-                // 缓慢旋转
                 heartRef.current.rotation.y = time * 0.6;
-                // 轻微浮动
                 heartRef.current.position.y = Math.sin(time * 1.5) * 0.3;
-
-                // 呼吸感缩放
                 const scale = 0.35 + Math.sin(time * 2.5) * 0.03;
                 heartRef.current.scale.setScalar(scale);
-                
-                // 颜色在桃红和深粉之间缓慢变化
-                const hue = 0.9 + Math.sin(time * 0.5) * 0.05; // around pink/magenta
+                const hue = 0.9 + Math.sin(time * 0.5) * 0.05; 
                 const color = new THREE.Color().setHSL(hue, 1, 0.6);
                 heartRef.current.material.color = color;
                 heartRef.current.material.emissive = color;
-
                 if(lightRef.current) {
                     lightRef.current.color = color;
-                    // 音乐播放时灯光更亮
                     lightRef.current.intensity = isPlaying ? 8 : 5;
                 }
             });
@@ -284,64 +305,37 @@
             return (
                 <group position={[0, 22.5, 0]}>
                     <Center>
-                        <mesh ref={heartRef} rotation={[Math.PI, 0, 0]}> {/* 翻转一下让尖端朝下 */}
+                        <mesh ref={heartRef} rotation={[Math.PI, 0, 0]}> 
                             <extrudeGeometry args={[heartShape, extrudeSettings]} />
-                            <meshStandardMaterial 
-                                toneMapped={false} 
-                                emissiveIntensity={2.5} // 强烈发光
-                                roughness={0.2} 
-                                metalness={0.8} 
-                                color="#ff1493" // 深粉色基调
-                                emissive="#ff1493"
-                            />
+                            <meshStandardMaterial toneMapped={false} emissiveIntensity={2.5} roughness={0.2} metalness={0.8} color="#ff1493" emissive="#ff1493" />
                         </mesh>
                     </Center>
-                    {/* 桃红色的点光源照亮树顶 */}
                     <pointLight ref={lightRef} distance={25} decay={2} color="#ff1493" />
-                    {/* 专属心形周围的闪光 */}
                     <Sparkles count={30} scale={8} size={5} speed={0.5} opacity={1} color="#ffb6c1" />
                 </group>
             );
         };
 
-        // --- NEW: Styled Fireworks (背景烟花) ---
-        // 这是一个轻量级的烟花效果，模拟远处随机绽放的光球群
+        // --- Styled Fireworks ---
         const StyledFireworks = () => {
             const ref = useRef();
-            // 生成一些随机位置的“烟花束”
-            const bursts = useMemo(() => {
-                return Array.from({ length: 8 }).map(() => ({
-                    // 随机位置在远处
-                    position: new THREE.Vector3((Math.random()-0.5)*150, Math.random()*60 - 10, (Math.random()-0.5)*150 - 50),
-                    // 随机颜色 (粉, 金, 红, 紫)
-                    color: ['#ff69b4', '#ffd700', '#ff0033', '#a020f0'][Math.floor(Math.random()*4)],
-                    // 随机启动时间偏移
-                    offset: Math.random() * 10,
-                    speed: 0.5 + Math.random() * 0.5
-                }));
-            }, []);
+            const bursts = useMemo(() => Array.from({ length: 8 }).map(() => ({
+                position: new THREE.Vector3((Math.random()-0.5)*150, Math.random()*60 - 10, (Math.random()-0.5)*150 - 50),
+                color: ['#ff69b4', '#ffd700', '#ff0033', '#a020f0'][Math.floor(Math.random()*4)],
+                offset: Math.random() * 10,
+                speed: 0.5 + Math.random() * 0.5
+            })), []);
 
             useFrame((state) => {
                 if(!ref.current) return;
                 const time = state.clock.elapsedTime;
                 ref.current.children.forEach((group, i) => {
                    const burst = bursts[i];
-                   // 循环播放：膨胀 -> 消失
-                   const t = ((time + burst.offset) * burst.speed) % 4; // 4秒一个周期
-                   let scale = 0;
-                   let opacity = 0;
-                   
-                   if (t < 2.5) {
-                       // 快速膨胀期
-                       scale = t * 6; // 变大
-                       opacity = 1 - (t / 2.5); // 渐隐
-                   }
-                   
-                   // 应用到 group 里的所有粒子
+                   const t = ((time + burst.offset) * burst.speed) % 4; 
+                   let scale = 0; let opacity = 0;
+                   if (t < 2.5) { scale = t * 6; opacity = 1 - (t / 2.5); }
                    group.scale.setScalar(scale);
-                   group.children.forEach(mesh => {
-                       mesh.material.opacity = opacity;
-                   });
+                   group.children.forEach(mesh => mesh.material.opacity = opacity);
                 });
             });
 
@@ -349,7 +343,6 @@
                 <group ref={ref}>
                     {bursts.map((burst, i) => (
                         <group key={i} position={burst.position}>
-                            {/* 每个烟花束由几个简单的发光球体组成 */}
                             <Instances limit={6}>
                                 <sphereGeometry args={[0.8, 8, 8]} />
                                 <meshBasicMaterial transparent color={burst.color} blending={THREE.AdditiveBlending} depthWrite={false} />
@@ -362,7 +355,6 @@
                 </group>
             );
         }
-
 
         const Scene = ({ colors, mode, setMode }) => {
             const [playing, setPlaying] = useState(false);
@@ -387,30 +379,26 @@
 
             return (
                 <>
-                    {/* 灯光调整：更暖、更浪漫的粉/紫调 */}
-                    <ambientLight intensity={0.8} color="#ffcce6" /> {/* 粉色环境光 */}
+                    <ambientLight intensity={0.8} color="#ffcce6" />
                     <directionalLight position={[0, 10, 20]} intensity={2.0} color="#fff0f5" />
-                    <directionalLight position={[-20, 5, 0]} intensity={2.5} color="#ff66b2" /> {/* 强烈的粉色侧光 */}
-                    <directionalLight position={[20, -5, 0]} intensity={1.5} color="#ffcc00" /> {/* 暖金色补光 */}
-                    {/* 顶部射灯改为柔和的紫粉色 */}
+                    <directionalLight position={[-20, 5, 0]} intensity={2.5} color="#ff66b2" />
+                    <directionalLight position={[20, -5, 0]} intensity={1.5} color="#ffcc00" />
                     <spotLight position={[0, 50, 0]} intensity={40} angle={0.6} color="#d87093" penumbra={1} />
-                    {/* 底部暖光 */}
                     <pointLight position={[0, -10, 0]} intensity={5} distance={30} color="#ff4500" />
                     
-                    {/* 背景烟花 */}
                     <StyledFireworks />
 
                     <CatVoxels count={2400} colors={colors} mode={mode} isPlaying={playing} />
+                    
+                    {/* 使用修复后的 Decorations 组件 */}
                     <Decorations mode={mode} />
 
-                    {/* 使用新的爱心组件替代星星 */}
                     { mode === 'TREE' && <TopHeart isPlaying={playing} /> }
                     
-                    {/* 背景粒子：增加粉色和金色 */}
                     <Sparkles count={800} scale={[120, 120, 150]} size={4} speed={0.3} opacity={0.6} color="#ffb6c1" />
                     <Sparkles count={400} scale={[100, 100, 100]} size={3} speed={0.5} opacity={0.5} color="#ffd700" />
                     
-                    {/* UI修复：将文字位置从 -28 下移到 -38，避免重叠 */}
+                    {/* 文字下移到 -38 */}
                     <group position={[0, -38, 0]}>
                         <Float speed={1.5} rotationIntensity={0.15} floatIntensity={0.3}>
                             <Center>
@@ -419,7 +407,6 @@
                                     size={4.5} height={0.3} curveSegments={12} bevelEnabled bevelThickness={0.1}
                                 >
                                     TO WQC
-                                    {/* 文字材质：浪漫的玫瑰金/粉色金属感 */}
                                     <meshStandardMaterial color={"#ff69b4"} emissive={"#d42424"} emissiveIntensity={0.4} metalness={0.7} roughness={0.1} />
                                 </Text3D>
                             </Center>
@@ -427,9 +414,7 @@
                     </group>
 
                     <EffectComposer disableNormalPass>
-                        {/* 辉光更强，营造梦幻感 */}
                         <Bloom luminanceThreshold={0.6} mipmapBlur intensity={2.2} radius={0.6} />
-                        {/* 暗角更重，聚焦中心 */}
                         <Vignette eskil={false} offset={0.1} darkness={0.65} />
                     </EffectComposer>
                 </>
@@ -438,7 +423,6 @@
 
         const App = () => {
             const [mode, setMode] = useState('TREE');
-            // 初始配色：经典的红绿金，但更深邃一点
             const [colors, setColors] = useState([new THREE.Color('#c71585'), new THREE.Color('#006400'), new THREE.Color('#FFD700')]);
             
             useEffect(() => {
