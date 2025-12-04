@@ -2,34 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>For WQC | Eternal Edition</title>
     <style>
         :root { --neon-gold: #ffd700; --neon-green: #00ff9d; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #020202; overflow: hidden; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #020202; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
         /* UI 层 */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; box-sizing: border-box; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
         
-        .header { pointer-events: auto; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); padding: 20px 30px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); display: inline-block; animation: slideDown 1.5s cubic-bezier(0.19, 1, 0.22, 1); }
-        h1 { margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; background: linear-gradient(135deg, #fff 0%, var(--neon-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .sub-text { font-size: 0.8rem; letter-spacing: 2px; color: rgba(255, 255, 255, 0.6); margin-top: 5px; text-transform: uppercase; }
+        .header { pointer-events: auto; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); display: inline-block; animation: slideDown 1.5s cubic-bezier(0.19, 1, 0.22, 1); margin-top: 10px; }
+        h1 { margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #fff 0%, var(--neon-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub-text { font-size: 0.75rem; letter-spacing: 2px; color: rgba(255, 255, 255, 0.7); margin-top: 5px; text-transform: uppercase; font-weight: 600; }
 
         /* 按钮组 */
-        .actions { pointer-events: auto; display: flex; gap: 10px; flex-wrap: wrap; animation: slideUp 1.5s cubic-bezier(0.19, 1, 0.22, 1); }
-        .btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; }
-        .btn:hover { background: var(--neon-gold); color: black; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); transform: translateY(-2px); }
+        .actions { pointer-events: auto; display: flex; gap: 10px; flex-wrap: wrap; animation: slideUp 1.5s cubic-bezier(0.19, 1, 0.22, 1); margin-bottom: 20px; }
+        .btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.3s ease; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+        .btn:hover { background: var(--neon-gold); color: black; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); transform: translateY(-2px); }
         .btn:active { transform: translateY(0); }
 
         /* Loading */
-        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease, visibility 0.8s; }
-        .loading-text { color: var(--neon-green); font-family: monospace; letter-spacing: 4px; font-size: 1.2rem; animation: pulse 1s infinite; margin-bottom: 10px; }
-        .loading-tip { color: #555; font-size: 0.8rem; }
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
+        .loading-text { color: var(--neon-green); font-family: monospace; letter-spacing: 3px; font-size: 1.1rem; animation: pulse 1s infinite; margin-bottom: 10px; font-weight: bold; }
+        .loading-tip { color: #666; font-size: 0.8rem; font-family: sans-serif; }
 
-        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
     
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -49,8 +49,8 @@
 </head>
 <body>
     <div id="loader">
-        <div class="loading-text">INITIALIZING SYSTEM...</div>
-        <div class="loading-tip">Creating Voxel Cats for WQC</div>
+        <div class="loading-text">SYSTEM INITIALIZING...</div>
+        <div class="loading-tip">Preparing Magic for WQC</div>
     </div>
 
     <div id="ui-layer">
@@ -60,10 +60,10 @@
         </div>
         
         <div class="actions">
-            <div id="btn-play" class="btn">▶ PLAY MUSIC</div>
-            <div id="btn-remix" class="btn">🎨 REMIX COLORS</div>
-            <div id="btn-morph" class="btn">✨ MORPH SHAPE</div>
-            <div id="btn-snap" class="btn">📷 SNAPSHOT</div>
+            <div id="btn-play" class="btn">▶ MUSIC</div>
+            <div id="btn-remix" class="btn">🎨 REMIX</div>
+            <div id="btn-morph" class="btn">✨ MORPH</div>
+            <div id="btn-snap" class="btn">📷 SNAP</div>
         </div>
     </div>
     
@@ -77,15 +77,17 @@
         import { OrbitControls, Text, Float, Sparkles, Stars, CameraShake } from '@react-three/drei';
         import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
 
-        // --- 1. 音频核心 (Audio Engine) ---
+        // --- 强制移除 Loading 补丁 (防止卡死) ---
+        setTimeout(() => {
+            const l = document.getElementById('loader');
+            if(l) { l.style.opacity = 0; setTimeout(() => l.style.display='none', 800); }
+        }, 4000); // 4秒后无论如何都进入
+
+        // --- Audio Engine ---
         class AudioEngine {
             constructor() {
-                this.ctx = null;
-                this.analyser = null;
-                this.dataArray = null;
-                this.isPlaying = false;
+                this.ctx = null; this.analyser = null; this.dataArray = null; this.isPlaying = false;
             }
-
             init() {
                 if (this.ctx) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
@@ -94,160 +96,102 @@
                 this.analyser.fftSize = 64; 
                 this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             }
-
             playMelody() {
                 if (!this.ctx) this.init();
                 if (this.ctx.state === 'suspended') this.ctx.resume();
                 this.isPlaying = true;
-
-                // 喵喵版 Jingle Bells 乐谱
                 const notes = [
-                    {f:659,d:0.2}, {f:659,d:0.2}, {f:659,d:0.4}, // 3 3 3
-                    {f:659,d:0.2}, {f:659,d:0.2}, {f:659,d:0.4}, // 3 3 3
-                    {f:659,d:0.2}, {f:783,d:0.2}, {f:523,d:0.2}, {f:587,d:0.2}, {f:659,d:0.8}, // 3 5 1 2 3
-                    {f:698,d:0.2}, {f:698,d:0.2}, {f:698,d:0.2}, {f:698,d:0.2}, // 4 4 4 4
-                    {f:698,d:0.2}, {f:659,d:0.2}, {f:659,d:0.2}, {f:659,d:0.2}, // 4 3 3 3
-                    {f:783,d:0.2}, {f:783,d:0.2}, {f:698,d:0.2}, {f:587,d:0.2}, {f:523,d:0.8}  // 5 5 4 2 1
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},{f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
+                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8},
+                    {f:698,d:0.2},{f:698,d:0.2},{f:698,d:0.2},{f:698,d:0.2},{f:698,d:0.2},{f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.2},
+                    {f:783,d:0.2},{f:783,d:0.2},{f:698,d:0.2},{f:587,d:0.2},{f:523,d:0.8}
                 ];
-
                 let time = this.ctx.currentTime;
-                // 循环播放两次以延长体验
-                const fullLoop = [...notes, {f:0, d:0.5}, ...notes];
-
-                fullLoop.forEach((n, i) => {
+                const loop = [...notes, {f:0,d:0.5}, ...notes];
+                loop.forEach((n, i) => {
                     if(n.f > 0) {
                         const osc = this.ctx.createOscillator();
                         const gain = this.ctx.createGain();
                         const filter = this.ctx.createBiquadFilter();
-
-                        // 混合波形
-                        osc.type = i % 3 === 0 ? 'triangle' : 'sawtooth'; 
+                        osc.type = i%3===0?'triangle':'sawtooth'; 
                         osc.frequency.value = n.f;
-
-                        // Wah-Wah 滤波器效果 (模拟猫叫)
                         filter.type = 'lowpass';
                         filter.frequency.setValueAtTime(200, time);
                         filter.frequency.linearRampToValueAtTime(n.f * 3.5, time + 0.1); 
-                        filter.frequency.exponentialRampToValueAtTime(200, time + n.d * 0.8);
-
-                        osc.connect(filter);
-                        filter.connect(gain);
-                        gain.connect(this.analyser); // 连接到分析器
-                        this.analyser.connect(this.ctx.destination);
-
+                        osc.connect(filter); filter.connect(gain);
+                        gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
                         osc.start(time);
                         gain.gain.setValueAtTime(0, time);
-                        gain.gain.linearRampToValueAtTime(0.25, time + 0.05);
+                        gain.gain.linearRampToValueAtTime(0.2, time + 0.05);
                         gain.gain.exponentialRampToValueAtTime(0.001, time + n.d * 0.9);
                         osc.stop(time + n.d);
                     }
                     time += n.d * 0.45;
                 });
             }
-
             getEnergy() {
                 if (!this.analyser) return 0;
                 this.analyser.getByteFrequencyData(this.dataArray);
-                let sum = 0;
-                // 取低频部分
-                for(let i=0; i<6; i++) sum += this.dataArray[i];
+                let sum = 0; for(let i=0; i<6; i++) sum += this.dataArray[i];
                 return sum / 6 / 255; 
             }
         }
-
         const audioSystem = new AudioEngine();
 
-        // --- 2. 粒子组件 (Voxel Cats) ---
-        const CatVoxels = ({ count = 2800, colors, mode, isPlaying }) => {
-            const bodyRef = useRef();
-            const headRef = useRef();
+        // --- Cat Voxels ---
+        const CatVoxels = ({ count = 2500, colors, mode, isPlaying }) => {
+            const bodyRef = useRef(); const headRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
-            
             const particles = useMemo(() => {
                 const temp = [];
                 for (let i = 0; i < count; i++) {
                     const t = i / count;
-                    // 树形：螺旋
                     const angle = t * Math.PI * 30;
                     const radius = (1 - t) * 16;
                     const y = t * 45 - 22;
-                    const treePos = new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
-                    
-                    // 散开形态
-                    const scatterPos = new THREE.Vector3(
-                        (Math.random()-0.5)*90, (Math.random()-0.5)*70, (Math.random()-0.5)*90
-                    );
-
-                    temp.push({
-                        treePos, scatterPos,
-                        pos: scatterPos.clone(),
-                        speed: Math.random() * 0.5 + 0.5,
-                        phase: Math.random() * Math.PI * 2,
-                        colorType: Math.random()
-                    });
+                    const treePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
+                    const scatterPos = new THREE.Vector3((Math.random()-0.5)*90, (Math.random()-0.5)*70, (Math.random()-0.5)*90);
+                    temp.push({ treePos, scatterPos, pos: scatterPos.clone(), speed: Math.random()*0.5+0.5, phase: Math.random()*Math.PI*2, colorType: Math.random() });
                 }
                 return temp;
             }, [count]);
 
-            // 颜色动态更新
             useEffect(() => {
                 if(!bodyRef.current) return;
                 particles.forEach((p, i) => {
-                    const c = p.colorType < 0.3 ? colors[0] : (p.colorType < 0.6 ? colors[1] : colors[2]);
-                    bodyRef.current.setColorAt(i, c);
-                    headRef.current.setColorAt(i, c);
+                    const c = p.colorType<0.3?colors[0]:(p.colorType<0.6?colors[1]:colors[2]);
+                    bodyRef.current.setColorAt(i, c); headRef.current.setColorAt(i, c);
                 });
-                bodyRef.current.instanceColor.needsUpdate = true;
-                headRef.current.instanceColor.needsUpdate = true;
+                bodyRef.current.instanceColor.needsUpdate = true; headRef.current.instanceColor.needsUpdate = true;
             }, [colors]);
 
             useFrame((state, delta) => {
                 if(!bodyRef.current) return;
-                
-                const energy = audioSystem.getEnergy(); // 获取音频能量 (0-1)
-                const pulse = 1 + energy * 0.6; // 膨胀系数
-
+                const energy = audioSystem.getEnergy();
+                const pulse = 1 + energy * 0.6;
                 const time = state.clock.elapsedTime;
                 const isTree = mode === 'TREE';
 
                 particles.forEach((p, i) => {
-                    // 目标位置
                     const targetBase = isTree ? p.treePos : p.scatterPos;
                     let target = targetBase.clone();
-
                     if (isTree) {
                         const rot = time * 0.15;
                         target.applyAxisAngle(new THREE.Vector3(0,1,0), rot);
-                        // 音乐律动：膨胀
                         target.multiplyScalar(pulse);
                     }
-                    
                     p.pos.lerp(target, delta * 3 * p.speed);
-
-                    // 跳舞逻辑 (Bounce)
                     let bounce = 0;
-                    if (isTree && isPlaying) {
-                        // 随节奏跳动
-                        bounce = Math.sin(time * 15 + p.phase) * (0.2 + energy * 2);
-                    }
-
-                    dummy.position.copy(p.pos);
-                    dummy.position.y += bounce;
+                    if (isTree && isPlaying) bounce = Math.sin(time * 15 + p.phase) * (0.2 + energy * 2);
+                    dummy.position.copy(p.pos); dummy.position.y += bounce;
                     dummy.lookAt(0, p.pos.y, 0);
-                    
-                    // 随能量变大
                     const scale = 0.4 * (1 + energy * 0.3);
                     dummy.scale.setScalar(scale);
-
                     dummy.updateMatrix();
-                    bodyRef.current.setMatrixAt(i, dummy.matrix);
-                    headRef.current.setMatrixAt(i, dummy.matrix);
+                    bodyRef.current.setMatrixAt(i, dummy.matrix); headRef.current.setMatrixAt(i, dummy.matrix);
                 });
-
-                bodyRef.current.instanceMatrix.needsUpdate = true;
-                headRef.current.instanceMatrix.needsUpdate = true;
+                bodyRef.current.instanceMatrix.needsUpdate = true; headRef.current.instanceMatrix.needsUpdate = true;
             });
-
             const mat = <meshStandardMaterial roughness={0.2} metalness={0.8} />;
             return (
                 <group>
@@ -257,53 +201,23 @@
             );
         };
 
-        // --- 3. 场景主控 (Scene) ---
         const Scene = ({ colors, mode, setMode }) => {
             const [playing, setPlaying] = useState(false);
-            
-            // 绑定外部按钮事件
             useEffect(() => {
                 const btnPlay = document.getElementById('btn-play');
-                const btnRemix = document.getElementById('btn-remix');
-                const btnMorph = document.getElementById('btn-morph');
                 const btnSnap = document.getElementById('btn-snap');
-
-                // 播放音乐
-                const playFn = () => {
-                    if(!playing) {
-                        setPlaying(true);
-                        audioSystem.playMelody();
-                        btnPlay.style.opacity = 0.5;
-                        btnPlay.innerText = "▶ PLAYING...";
-                    }
-                };
-                
-                // 截图
+                const btnMorph = document.getElementById('btn-morph');
+                const playFn = () => { if(!playing) { setPlaying(true); audioSystem.playMelody(); btnPlay.innerText = "▶ PLAYING..."; btnPlay.style.opacity = 0.6; } };
                 const snapFn = () => {
                     const canvas = document.querySelector('canvas');
-                    if(canvas) {
-                        const link = document.createElement('a');
-                        link.download = 'Christmas-For-WQC.png';
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                    }
+                    if(canvas) { const link = document.createElement('a'); link.download = 'WQC-Christmas.png'; link.href = canvas.toDataURL('image/png'); link.click(); }
                 };
-
-                // 变形
-                const morphFn = () => setMode(prev => prev === 'TREE' ? 'SCATTER' : 'TREE');
-
-                btnPlay.onclick = playFn;
-                btnSnap.onclick = snapFn;
-                btnMorph.onclick = morphFn;
-                // Remix在父组件处理，这里不需要绑定
-
+                btnPlay.onclick = playFn; btnSnap.onclick = snapFn; btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
             }, [playing]);
 
-            // 摄像机入场动画
             useFrame((state) => {
                 if (!playing) return;
                 const t = state.clock.elapsedTime;
-                // 缓慢拉远
                 state.camera.position.lerp(new THREE.Vector3(0, 0, 60 + Math.sin(t*0.2)*5), 0.02);
                 state.camera.lookAt(0, 0, 0);
             });
@@ -314,34 +228,22 @@
                     <pointLight position={[10, 20, 10]} intensity={80} color={colors[1]} />
                     <pointLight position={[-10, -10, -10]} intensity={50} color={colors[2]} />
                     <spotLight position={[0, 50, 0]} intensity={200} angle={0.5} penumbra={1} color={colors[0]} castShadow />
-
                     <CatVoxels count={3000} colors={colors} mode={mode} isPlaying={playing} />
-
                     <Sparkles count={800} scale={60} size={5} speed={0.4} opacity={0.6} color={colors[2]} />
                     <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-                    
                     <group position={[0, -26, 0]}>
                         <Float speed={2} rotationIntensity={0.2} floatIntensity={0.2}>
-                            <Text
-                                fontSize={8}
-                                color={colors[0]}
-                                anchorX="center"
-                                anchorY="middle"
-                                outlineWidth={0.2}
-                                outlineColor={colors[2]}
-                                font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff" 
-                            >
+                            {/* 关键修改：移除了 font 属性，使用系统默认字体，防止被墙 */}
+                            <Text fontSize={8} color={colors[0]} anchorX="center" anchorY="middle" outlineWidth={0.2} outlineColor={colors[2]} fontWeight="bold">
                                 TO WQC
                             </Text>
                         </Float>
                     </group>
-
                     <EffectComposer disableNormalPass>
                         <Bloom luminanceThreshold={0.8} mipmapBlur intensity={1.8} radius={0.4} />
-                        <ChromaticAberration offset={[0.002, 0.002]} /> 
+                        <ChromaticAberration offset={[0.002, 0.002]} />
                         <Vignette eskil={false} offset={0.1} darkness={1.1} />
                     </EffectComposer>
-                    
                     <CameraShake yawFrequency={0.1} pitchFrequency={0.1} rollFrequency={0.1} intensity={playing ? 0.2 : 0} />
                 </>
             );
@@ -349,30 +251,17 @@
 
         const App = () => {
             const [mode, setMode] = useState('TREE');
-            
             const getColors = () => {
                 const h = Math.random();
-                return [
-                    new THREE.Color().setHSL(h, 1, 0.6),      
-                    new THREE.Color().setHSL((h+0.6)%1, 0.8, 0.5), 
-                    new THREE.Color().setHSL((h+0.3)%1, 1, 0.8)    
-                ];
+                return [ new THREE.Color().setHSL(h, 1, 0.6), new THREE.Color().setHSL((h+0.6)%1, 0.8, 0.5), new THREE.Color().setHSL((h+0.3)%1, 1, 0.8) ];
             };
             const [colors, setColors] = useState(getColors());
-
             useEffect(() => {
-                // 绑定 Remix 按钮
-                const btnRemix = document.getElementById('btn-remix');
-                btnRemix.onclick = () => setColors(getColors());
-
-                // 移除 Loading
-                const loader = document.getElementById('loader');
-                if(loader) {
-                    setTimeout(() => { loader.style.opacity = 0; }, 500);
-                    setTimeout(() => { loader.style.display = 'none'; }, 1500);
-                }
+                document.getElementById('btn-remix').onclick = () => setColors(getColors());
+                const l = document.getElementById('loader');
+                // 正常加载完毕移除 loader
+                if(l) { setTimeout(() => { l.style.opacity = 0; setTimeout(() => l.style.display='none', 800); }, 1000); }
             }, []);
-
             return (
                 <Canvas dpr={[1, 1.5]} gl={{ antialias: false }} camera={{ position: [0, 0, 10], fov: 45 }}>
                     <Scene colors={colors} mode={mode} setMode={setMode} />
@@ -380,7 +269,6 @@
                 </Canvas>
             );
         };
-
         const root = createRoot(document.getElementById('canvas-container'));
         root.render(<App />);
     </script>
