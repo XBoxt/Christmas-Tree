@@ -3,41 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For WQC | Bright Christmas</title>
+    <title>For WQC | Crystal Christmas</title>
     <style>
-        :root { --neon-gold: #ffd700; --neon-green: #00ff9d; }
+        :root { --neon-gold: #ffd700; }
         
-        /* 1. 背景大改：圣诞节日渐变 (中心红 -> 边缘绿) */
+        /* 背景：保持你喜欢的节日渐变 */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; 
-            /* 使用径向渐变模拟氛围灯 */
             background: radial-gradient(circle at 50% 40%, #5e0f12 0%, #2d4a22 60%, #0d1f0d 100%);
             overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
         
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
+        /* UI 层布局优化：按钮下沉居中 */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 40px; }
         
-        .header-panel { 
-            pointer-events: auto; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); 
-            padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.3); 
-            display: inline-block; margin-top: 10px; text-align: left;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
-        }
-        h1 { margin: 0; font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: #fff; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        /* 删除了 .header-panel (顶部的框) */
 
-        .actions { pointer-events: auto; display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        /* 按钮组样式优化：更精致的磨砂玻璃感 */
+        .actions { pointer-events: auto; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
         .btn { 
-            background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); 
-            color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; 
-            font-size: 0.9rem; font-weight: 700; transition: all 0.2s ease; 
-            backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); 
+            color: rgba(255, 255, 255, 0.9); padding: 10px 20px; border-radius: 50px; cursor: pointer; 
+            font-size: 0.85rem; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+            letter-spacing: 1px;
         }
-        .btn:active { transform: scale(0.95); background: rgba(255, 215, 0, 0.4); }
-        .btn.primary { background: rgba(255, 215, 0, 0.2); border-color: var(--neon-gold); color: var(--neon-gold); }
+        .btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .btn:active { transform: scale(0.95); }
+        
+        /* 播放按钮高亮 */
+        .btn.primary { background: rgba(255, 215, 0, 0.15); border-color: var(--neon-gold); color: var(--neon-gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        .btn.primary:hover { background: rgba(255, 215, 0, 0.25); box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
 
-        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f2210; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-        .loading-text { color: var(--neon-gold); font-family: monospace; letter-spacing: 3px; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
-        .progress-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; margin-top: 10px; }
-        .progress-fill { width: 50%; height: 100%; background: var(--neon-gold); animation: loadAnim 2s infinite ease-in-out; }
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f2210; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
+        .loading-text { color: var(--neon-gold); font-family: monospace; letter-spacing: 5px; font-size: 0.9rem; margin-bottom: 15px; opacity: 0.8; }
+        .progress-bar { width: 150px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        .progress-fill { width: 50%; height: 100%; background: var(--neon-gold); animation: loadAnim 1.5s infinite ease-in-out; }
 
         #error-log { position: absolute; top: 0; left: 0; width: 100%; background: rgba(255,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 1000; display: none; }
         @keyframes loadAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
@@ -63,19 +62,16 @@
 <body>
     <div id="error-log"></div>
     <div id="loader">
-        <div class="loading-text">MERRY CHRISTMAS</div>
+        <div class="loading-text">LOADING SURPRISE</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
     </div>
 
     <div id="ui-layer">
-        <div class="header-panel">
-            <h1>TO WQC</h1>
-        </div>
         <div class="actions">
             <div id="btn-play" class="btn primary">▶ PLAY MUSIC</div>
-            <div id="btn-remix" class="btn">🎨 REMIX</div>
+            <div id="btn-remix" class="btn">🎨 COLORS</div>
             <div id="btn-morph" class="btn">✨ SHAPE</div>
-            <div id="btn-snap" class="btn">📷 SAVE</div>
+            <div id="btn-snap" class="btn">📷 PHOTO</div>
         </div>
     </div>
     
@@ -92,7 +88,7 @@
             const l = document.getElementById('loader');
             if(l && l.style.display !== 'none') {
                 l.style.opacity = 0;
-                setTimeout(()=>l.style.display='none', 500);
+                setTimeout(()=>l.style.display='none', 800);
             }
         }, 10000); 
     </script>
@@ -114,10 +110,10 @@
                 this.nextNoteTime = 0;
                 this.timerID = null;
                 this.notes = [
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Jingle
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Bells
-                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}, // All the way
-                    {f:587,d:0.2},{f:587,d:0.2},{f:659,d:0.2},{f:587,d:0.2},{f:783,d:0.4} // Fun ending
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, 
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, 
+                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}, 
+                    {f:587,d:0.2},{f:587,d:0.2},{f:659,d:0.2},{f:587,d:0.2},{f:783,d:0.4} 
                 ];
                 this.currentNoteIndex = 0;
             }
@@ -177,7 +173,7 @@
         }
         const audioSystem = new AudioEngine();
 
-        // --- CatVoxels (树/粒子) ---
+        // --- CatVoxels ---
         const CatVoxels = ({ count = 2000, colors, mode, isPlaying }) => {
             const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -238,8 +234,8 @@
             return (
                 <instancedMesh ref={meshRef} args={[null, null, count]}>
                     <boxGeometry args={[1, 0.8, 1]} />
-                    {/* 材质优化：减少金属感，增加粗糙度，让它像发光的积木，更亮 */}
-                    <meshStandardMaterial roughness={0.2} metalness={0.1} emissive="#222" emissiveIntensity={0.2} />
+                    {/* 材质优化：水晶质感，高光泽，低粗糙度 */}
+                    <meshStandardMaterial roughness={0.1} metalness={0.6} emissive="#444" emissiveIntensity={0.1} />
                 </instancedMesh>
             );
         };
@@ -274,51 +270,38 @@
 
             return (
                 <>
-                    {/* === 2. 终极灯光系统：前后左右中全亮 === */}
-                    
-                    {/* 环境光：大幅提高基础亮度 */}
-                    <ambientLight intensity={1.5} color="#ffe" />
-                    
-                    {/* 正面强光 */}
+                    {/* 环境光 & 补光系统 */}
+                    <ambientLight intensity={1.2} color="#ffe" />
                     <directionalLight position={[0, 0, 20]} intensity={3} color="#fff8e7" />
-                    
-                    {/* 背面补光 */}
                     <directionalLight position={[0, 0, -20]} intensity={2} color="#ccffcc" />
-                    
-                    {/* 左侧光 */}
                     <directionalLight position={[-20, 0, 0]} intensity={2} color="#ffddee" />
-                    
-                    {/* 右侧光 */}
                     <directionalLight position={[20, 0, 0]} intensity={2} color="#ddeeff" />
-                    
-                    {/* 顶部强光 */}
-                    <spotLight position={[0, 50, 0]} intensity={50} angle={0.6} color={colors[0]} penumbra={0.5} />
-                    
-                    {/* 核心内发光 (让树看起来通透) */}
-                    <pointLight position={[0, 10, 0]} intensity={10} distance={30} color="#ffaa00" />
+                    <spotLight position={[0, 50, 0]} intensity={60} angle={0.6} color={colors[0]} penumbra={0.5} />
+                    <pointLight position={[0, 10, 0]} intensity={15} distance={30} color="#ffaa00" />
                     
                     <CatVoxels count={2200} colors={colors} mode={mode} isPlaying={playing} />
                     
-                    {/* 雪花粒子：加大数量，覆盖全屏 */}
-                    <Sparkles count={800} scale={[100, 100, 100]} size={6} speed={0.4} opacity={0.9} color="#fff" />
+                    {/* 雪花优化：稍微调小一点，更细腻 */}
+                    <Sparkles count={1000} scale={[100, 100, 100]} size={4} speed={0.5} opacity={0.8} color="#fff" />
                     
-                    <group position={[0, -25, 0]}>
-                        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+                    {/* 3D 文字：去掉上层UI后，这个是唯一的主角，位置微调 */}
+                    <group position={[0, -28, 0]}>
+                        <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
                             <Center>
                                 <Text3D 
                                     font="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json"
-                                    size={4} height={0.5} curveSegments={12} bevelEnabled bevelThickness={0.1}
+                                    size={4.5} height={0.3} curveSegments={12} bevelEnabled bevelThickness={0.1}
                                 >
                                     TO WQC
-                                    <meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={0.8} />
+                                    <meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={0.5} />
                                 </Text3D>
                             </Center>
                         </Float>
                     </group>
 
                     <EffectComposer disableNormalPass>
-                        <Bloom luminanceThreshold={0.6} mipmapBlur intensity={1.2} radius={0.5} />
-                        <Vignette eskil={false} offset={0.1} darkness={0.8} />
+                        <Bloom luminanceThreshold={0.55} mipmapBlur intensity={1.5} radius={0.5} />
+                        <Vignette eskil={false} offset={0.1} darkness={0.7} />
                     </EffectComposer>
                 </>
             );
@@ -326,7 +309,8 @@
 
         const App = () => {
             const [mode, setMode] = useState('TREE');
-            const [colors, setColors] = useState([new THREE.Color('#FFD700'), new THREE.Color('#00FF9D'), new THREE.Color('#FF0080')]);
+            // 默认颜色优化：经典的红、绿、金
+            const [colors, setColors] = useState([new THREE.Color('#ea4630'), new THREE.Color('#2d5a27'), new THREE.Color('#FFD700')]);
             
             useEffect(() => {
                 window.changeColors = () => {
@@ -337,7 +321,7 @@
                     ]);
                 };
                 const l = document.getElementById('loader');
-                if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); }, 2000);
+                if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 800); }, 2000);
             }, []);
 
             return (
@@ -345,7 +329,7 @@
                     <Suspense fallback={null}>
                         <Scene colors={colors} mode={mode} setMode={setMode} />
                     </Suspense>
-                    <OrbitControls enablePan={false} maxDistance={90} minDistance={20} autoRotate={true} autoRotateSpeed={0.5} />
+                    <OrbitControls enablePan={false} maxDistance={90} minDistance={20} autoRotate={true} autoRotateSpeed={0.8} />
                 </Canvas>
             );
         };
