@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For WQC | Ultimate Surprise</title>
+    <title>For WQC | Christmas Special</title>
     <style>
         :root { --neon-gold: #ffd700; --neon-green: #00ff9d; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #050505; overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
@@ -18,7 +18,7 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         h1 { margin: 0; font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #fff 0%, var(--neon-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .sub-text { font-size: 0.8rem; letter-spacing: 2px; color: rgba(255, 255, 255, 0.7); margin-top: 5px; font-weight: 600; }
+        /* 已删除 Eternal Edition 文字 */
 
         /* 按钮区 */
         .actions { pointer-events: auto; display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -37,7 +37,6 @@
         .progress-bar { width: 200px; height: 4px; background: #333; border-radius: 2px; overflow: hidden; margin-top: 10px; }
         .progress-fill { width: 50%; height: 100%; background: var(--neon-green); animation: loadAnim 2s infinite ease-in-out; }
 
-        /* 错误提示 */
         #error-log { position: absolute; top: 0; left: 0; width: 100%; background: rgba(255,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 1000; display: none; }
 
         @keyframes loadAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
@@ -50,9 +49,7 @@
         "imports": {
             "react": "https://esm.sh/react@18.2.0",
             "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            
             "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-            
             "three": "https://esm.sh/three@0.160.0",
             "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
             "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber",
@@ -67,14 +64,12 @@
     <div id="loader">
         <div class="loading-text">INITIALIZING...</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
-        <div style="color: #666; font-size: 12px; margin-top: 10px">Ver 5.0 Fixed</div>
     </div>
 
     <div id="ui-layer">
         <div class="header-panel">
             <h1>TO WQC</h1>
-            <div class="sub-text">MERRY CHRISTMAS · ETERNAL EDITION</div>
-        </div>
+            </div>
         <div class="actions">
             <div id="btn-play" class="btn primary">▶ PLAY MUSIC</div>
             <div id="btn-remix" class="btn">🎨 REMIX</div>
@@ -86,14 +81,12 @@
     <div id="canvas-container" style="position: absolute; top:0; left:0; width:100%; height:100%"></div>
 
     <script>
-        // 错误捕获显示
         window.onerror = function(msg, url, line) {
             const el = document.getElementById('error-log');
             el.style.display = 'block';
             el.innerHTML += `Error: ${msg} <br>`;
             document.getElementById('loader').style.display = 'none';
         };
-        // 加载超时保护
         setTimeout(() => {
             const l = document.getElementById('loader');
             if(l && l.style.display !== 'none') {
@@ -111,9 +104,23 @@
         import { OrbitControls, Text3D, Center, Float, Sparkles } from '@react-three/drei';
         import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
-        // --- Audio Engine ---
+        // --- 修复版音频引擎 (支持循环 & 暂停) ---
         class AudioEngine {
-            constructor() { this.ctx = null; this.analyser = null; this.dataArray = null; }
+            constructor() { 
+                this.ctx = null; 
+                this.analyser = null; 
+                this.dataArray = null;
+                this.nextNoteTime = 0;
+                this.timerID = null;
+                this.notes = [
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Jingle
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Bells
+                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}, // All the way
+                    {f:587,d:0.2},{f:587,d:0.2},{f:659,d:0.2},{f:587,d:0.2},{f:783,d:0.4} // Fun ending
+                ];
+                this.currentNoteIndex = 0;
+            }
+
             init() {
                 if (this.ctx) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
@@ -122,31 +129,58 @@
                 this.analyser.fftSize = 64; 
                 this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             }
-            playMelody() {
-                if (!this.ctx) this.init();
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-                const notes = [
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
-                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}
-                ];
-                let time = this.ctx.currentTime;
-                const loop = [...notes, {f:0,d:0.5}, ...notes, {f:0,d:0.5}, ...notes];
-                loop.forEach((n, i) => {
-                    if(n.f > 0) {
-                        const osc = this.ctx.createOscillator();
-                        const gain = this.ctx.createGain();
-                        osc.type = 'triangle'; osc.frequency.value = n.f;
-                        osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
-                        osc.start(time);
-                        gain.gain.setValueAtTime(0, time);
-                        gain.gain.linearRampToValueAtTime(0.1, time + 0.05);
-                        gain.gain.exponentialRampToValueAtTime(0.001, time + n.d * 0.9);
-                        osc.stop(time + n.d);
+
+            // 调度器
+            scheduler() {
+                // 如果还有时间，就调度下一个音符
+                while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
+                    this.playNote(this.notes[this.currentNoteIndex], this.nextNoteTime);
+                    this.nextNoteTime += this.notes[this.currentNoteIndex].d * 0.45; // 节奏
+                    
+                    this.currentNoteIndex++;
+                    if (this.currentNoteIndex >= this.notes.length) {
+                        this.currentNoteIndex = 0; // 无限循环
+                        this.nextNoteTime += 0.5; // 循环间歇
                     }
-                    time += n.d * 0.45;
-                });
+                }
+                this.timerID = window.setTimeout(this.scheduler.bind(this), 25);
             }
+
+            playNote(note, time) {
+                if(note.f === 0) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle'; 
+                osc.frequency.value = note.f;
+                
+                osc.connect(gain); 
+                gain.connect(this.analyser); 
+                this.analyser.connect(this.ctx.destination);
+                
+                osc.start(time);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.15, time + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + note.d * 0.9);
+                osc.stop(time + note.d);
+            }
+
+            toggle() {
+                if (!this.ctx) {
+                    this.init();
+                    this.nextNoteTime = this.ctx.currentTime + 0.1;
+                    this.scheduler();
+                    return true; // Playing
+                }
+
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                    return true;
+                } else {
+                    this.ctx.suspend();
+                    return false;
+                }
+            }
+
             getEnergy() {
                 if (!this.analyser) return 0;
                 this.analyser.getByteFrequencyData(this.dataArray);
@@ -156,7 +190,7 @@
         }
         const audioSystem = new AudioEngine();
 
-        // --- Voxels ---
+        // --- 核心粒子组件 ---
         const CatVoxels = ({ count = 2000, colors, mode, isPlaying }) => {
             const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -170,7 +204,14 @@
                     const y = t * 40 - 20;
                     const treePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
                     const scatterPos = new THREE.Vector3((Math.random()-0.5)*80, (Math.random()-0.5)*60, (Math.random()-0.5)*80);
-                    temp.push({ treePos, scatterPos, pos: scatterPos.clone(), speed: Math.random()*0.5+0.5, phase: Math.random()*Math.PI*2, colorType: Math.random() });
+                    temp.push({ 
+                        treePos, 
+                        scatterPos, 
+                        pos: scatterPos.clone(), 
+                        speed: Math.random()*0.5+0.5, 
+                        phase: Math.random()*Math.PI*2, 
+                        colorType: Math.random() 
+                    });
                 }
                 return temp;
             }, [count]);
@@ -187,6 +228,7 @@
             useFrame((state, delta) => {
                 if(!meshRef.current) return;
                 const energy = audioSystem.getEnergy();
+                // 音乐停止时 energy 归零
                 const pulse = 1 + energy * 0.5;
                 const time = state.clock.elapsedTime;
                 const isTree = mode === 'TREE';
@@ -199,8 +241,11 @@
                         target.multiplyScalar(pulse);
                     }
                     p.pos.lerp(target, delta * 2.5 * p.speed);
+                    
                     let bounce = 0;
-                    if(isTree && isPlaying) bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy * 5);
+                    // 只有播放音乐时才跳动
+                    if(isTree && energy > 0.01) bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy * 5);
+                    
                     dummy.position.copy(p.pos); dummy.position.y += bounce;
                     dummy.lookAt(0, p.pos.y, 0); 
                     dummy.scale.setScalar(0.4 * (1 + energy * 0.3));
@@ -213,12 +258,11 @@
             return (
                 <instancedMesh ref={meshRef} args={[null, null, count]}>
                     <boxGeometry args={[1, 0.8, 1]} />
-                    <meshStandardMaterial roughness={0.2} metalness={0.8} />
+                    <meshStandardMaterial roughness={0.1} metalness={0.9} />
                 </instancedMesh>
             );
         };
 
-        // --- Main Scene ---
         const Scene = ({ colors, mode, setMode }) => {
             const [playing, setPlaying] = useState(false);
             
@@ -228,20 +272,39 @@
                 const btnSnap = document.getElementById('btn-snap');
                 const btnMorph = document.getElementById('btn-morph');
 
-                btnPlay.onclick = () => { if(!playing) { setPlaying(true); audioSystem.playMelody(); btnPlay.innerText = "PLAYING..."; btnPlay.style.opacity = 0.5; } };
+                // 修复：播放按钮现在是 Toggle（切换）模式
+                btnPlay.onclick = () => { 
+                    const isNowPlaying = audioSystem.toggle();
+                    setPlaying(isNowPlaying);
+                    if(isNowPlaying) {
+                        btnPlay.innerText = "⏸ PAUSE";
+                        btnPlay.classList.remove('primary');
+                    } else {
+                        btnPlay.innerText = "▶ PLAY MUSIC";
+                        btnPlay.classList.add('primary');
+                    }
+                };
+
                 btnRemix.onclick = () => window.changeColors(); 
                 btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
                 btnSnap.onclick = () => {
                     const canvas = document.querySelector('canvas');
                     const link = document.createElement('a'); link.download = 'WQC-Christmas.png'; link.href = canvas.toDataURL('image/png'); link.click();
                 };
-            }, [playing]);
+            }, []);
 
             return (
                 <>
-                    <ambientLight intensity={0.5} />
-                    <pointLight position={[10, 20, 10]} intensity={50} color={colors[1]} />
-                    <spotLight position={[0, 50, 0]} intensity={100} angle={0.5} color={colors[0]} />
+                    {/* 修复：灯光增强系统 */}
+                    {/* 1. 环境光：照亮整体，消除死黑阴影 */}
+                    <hemisphereLight intensity={2.0} groundColor="#333" color="#fff" />
+                    
+                    {/* 2. 平行光：模拟主光源 */}
+                    <directionalLight position={[-10, 10, 5]} intensity={5} color="white" />
+                    
+                    {/* 3. 点光源：保留原有彩灯感 */}
+                    <pointLight position={[10, 20, 10]} intensity={100} color={colors[1]} distance={50} />
+                    <spotLight position={[0, 50, 0]} intensity={100} angle={0.5} color={colors[0]} penumbra={1} />
                     
                     <CatVoxels count={2000} colors={colors} mode={mode} isPlaying={playing} />
                     <Sparkles count={300} scale={50} size={5} color={colors[2]} opacity={0.6} speed={0.5} />
