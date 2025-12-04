@@ -6,9 +6,11 @@
     <title>For WQC | Christmas Special</title>
     <style>
         :root { --neon-gold: #ffd700; --neon-green: #00ff9d; }
-        /* 1. 圣诞氛围背景优化：暗红到黑色的渐变 */
+        
+        /* --- 核心修改 1: 圣诞氛围背景 --- */
+        /* 不再是死黑，而是温暖深邃的圣诞红渐变，更有节日气氛，也能衬托树的亮度 */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: radial-gradient(circle at 50% 50%, #2a0a0a 0%, #050505 80%, #000 100%);
+            background: radial-gradient(circle at center, #4a0e0e 0%, #1a0505 70%, #000000 100%);
             overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
@@ -31,19 +33,16 @@
         .btn:active { transform: scale(0.95); background: rgba(255, 215, 0, 0.2); }
         .btn.primary { border-color: var(--neon-gold); color: var(--neon-gold); }
 
-        /* Loading */
         #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
         .loading-text { color: var(--neon-green); font-family: monospace; letter-spacing: 3px; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
         .progress-bar { width: 200px; height: 4px; background: #333; border-radius: 2px; overflow: hidden; margin-top: 10px; }
         .progress-fill { width: 50%; height: 100%; background: var(--neon-green); animation: loadAnim 2s infinite ease-in-out; }
 
         #error-log { position: absolute; top: 0; left: 0; width: 100%; background: rgba(255,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 1000; display: none; }
-
         @keyframes loadAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     </style>
 
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <script type="importmap">
     {
         "imports": {
@@ -65,11 +64,8 @@
         <div class="loading-text">INITIALIZING...</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
     </div>
-
     <div id="ui-layer">
-        <div class="header-panel">
-            <h1>TO WQC</h1>
-        </div>
+        <div class="header-panel"><h1>TO WQC</h1></div>
         <div class="actions">
             <div id="btn-play" class="btn primary">▶ PLAY MUSIC</div>
             <div id="btn-remix" class="btn">🎨 REMIX</div>
@@ -77,23 +73,13 @@
             <div id="btn-snap" class="btn">📷 SAVE</div>
         </div>
     </div>
-    
     <div id="canvas-container" style="position: absolute; top:0; left:0; width:100%; height:100%"></div>
 
     <script>
         window.onerror = function(msg, url, line) {
-            const el = document.getElementById('error-log');
-            el.style.display = 'block';
-            el.innerHTML += `Error: ${msg} <br>`;
-            document.getElementById('loader').style.display = 'none';
+            const el = document.getElementById('error-log'); el.style.display = 'block'; el.innerHTML += `Error: ${msg} <br>`; document.getElementById('loader').style.display = 'none';
         };
-        setTimeout(() => {
-            const l = document.getElementById('loader');
-            if(l && l.style.display !== 'none') {
-                l.style.opacity = 0;
-                setTimeout(()=>l.style.display='none', 500);
-            }
-        }, 10000); 
+        setTimeout(() => { const l = document.getElementById('loader'); if(l && l.style.display !== 'none') { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); } }, 10000); 
     </script>
 
     <script type="text/babel" data-type="module">
@@ -101,99 +87,49 @@
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { OrbitControls, Text3D, Center, Float, Sparkles, Stars } from '@react-three/drei';
+        import { OrbitControls, Text3D, Center, Float, Sparkles } from '@react-three/drei';
         import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
         // --- Audio Engine ---
         class AudioEngine {
             constructor() { 
-                this.ctx = null; 
-                this.analyser = null; 
-                this.dataArray = null;
-                this.nextNoteTime = 0;
-                this.timerID = null;
-                this.notes = [
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Jingle
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Bells
-                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}, // All the way
-                    {f:587,d:0.2},{f:587,d:0.2},{f:659,d:0.2},{f:587,d:0.2},{f:783,d:0.4} // Fun ending
-                ];
+                this.ctx = null; this.analyser = null; this.dataArray = null; this.nextNoteTime = 0; this.timerID = null;
+                this.notes = [{f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},{f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},{f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8},{f:587,d:0.2},{f:587,d:0.2},{f:659,d:0.2},{f:587,d:0.2},{f:783,d:0.4}];
                 this.currentNoteIndex = 0;
             }
-
             init() {
-                if (this.ctx) return;
-                const AC = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AC();
-                this.analyser = this.ctx.createAnalyser();
-                this.analyser.fftSize = 64; 
-                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                if (this.ctx) return; const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.analyser = this.ctx.createAnalyser(); this.analyser.fftSize = 64; this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             }
-
             scheduler() {
                 while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
-                    this.playNote(this.notes[this.currentNoteIndex], this.nextNoteTime);
-                    this.nextNoteTime += this.notes[this.currentNoteIndex].d * 0.45;
-                    this.currentNoteIndex++;
-                    if (this.currentNoteIndex >= this.notes.length) {
-                        this.currentNoteIndex = 0; 
-                        this.nextNoteTime += 0.5; 
-                    }
+                    this.playNote(this.notes[this.currentNoteIndex], this.nextNoteTime); this.nextNoteTime += this.notes[this.currentNoteIndex].d * 0.45; this.currentNoteIndex++;
+                    if (this.currentNoteIndex >= this.notes.length) { this.currentNoteIndex = 0; this.nextNoteTime += 0.5; }
                 }
                 this.timerID = window.setTimeout(this.scheduler.bind(this), 25);
             }
-
             playNote(note, time) {
-                if(note.f === 0) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle'; 
-                osc.frequency.value = note.f;
-                osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
-                osc.start(time);
-                gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(0.15, time + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + note.d * 0.9);
-                osc.stop(time + note.d);
+                if(note.f === 0) return; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'triangle'; osc.frequency.value = note.f; osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination); osc.start(time); gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.15, time + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, time + note.d * 0.9); osc.stop(time + note.d);
             }
-
             toggle() {
-                if (!this.ctx) {
-                    this.init();
-                    this.nextNoteTime = this.ctx.currentTime + 0.1;
-                    this.scheduler();
-                    return true;
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                    return true;
-                } else {
-                    this.ctx.suspend();
-                    return false;
-                }
+                if (!this.ctx) { this.init(); this.nextNoteTime = this.ctx.currentTime + 0.1; this.scheduler(); return true; }
+                if (this.ctx.state === 'suspended') { this.ctx.resume(); return true; } else { this.ctx.suspend(); return false; }
             }
-
             getEnergy() {
-                if (!this.analyser) return 0;
-                this.analyser.getByteFrequencyData(this.dataArray);
-                let sum = 0; for(let i=0; i<6; i++) sum += this.dataArray[i];
-                return sum / 6 / 255; 
+                if (!this.analyser) return 0; this.analyser.getByteFrequencyData(this.dataArray); let sum = 0; for(let i=0; i<6; i++) sum += this.dataArray[i]; return sum / 6 / 255; 
             }
         }
         const audioSystem = new AudioEngine();
 
-        // --- CatVoxels (树/粒子) ---
+        // --- 核心修改 2: CatVoxels (加入自发光闪烁材质) ---
         const CatVoxels = ({ count = 2000, colors, mode, isPlaying }) => {
             const meshRef = useRef();
+            const matRef = useRef(); // 新增材质引用
             const dummy = useMemo(() => new THREE.Object3D(), []);
             
             const particles = useMemo(() => {
                 const temp = [];
                 for (let i = 0; i < count; i++) {
-                    const t = i / count;
-                    const angle = t * Math.PI * 25;
-                    const radius = (1 - t) * 15;
-                    const y = t * 40 - 20;
+                    const t = i / count; const angle = t * Math.PI * 25; const radius = (1 - t) * 15; const y = t * 40 - 20;
                     const treePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
                     const scatterPos = new THREE.Vector3((Math.random()-0.5)*80, (Math.random()-0.5)*60, (Math.random()-0.5)*80);
                     temp.push({ treePos, scatterPos, pos: scatterPos.clone(), speed: Math.random()*0.5+0.5, phase: Math.random()*Math.PI*2, colorType: Math.random() });
@@ -215,29 +151,27 @@
                 const energy = audioSystem.getEnergy();
                 const time = state.clock.elapsedTime;
                 const isTree = mode === 'TREE';
-
-                // 2. 修复 Bug：只有在 isPlaying 为 true 时才计算脉冲和跳动
-                // 否则强制为 0，让树静止
                 const pulse = isPlaying ? (1 + energy * 0.5) : 1;
 
+                // --- 新增：控制材质的自发光强度，实现整体闪烁 ---
+                if (matRef.current) {
+                    // 基础呼吸闪烁 (Math.sin(time * 速度) * 幅度 + 基数)
+                    let brightness = Math.sin(time * 2) * 0.3 + 0.4; 
+                    // 音乐播放时，加上音乐能量的冲击
+                    if (isPlaying) brightness += energy * 1.5;
+                    // 设置发光强度
+                    matRef.current.emissiveIntensity = brightness;
+                }
+
                 particles.forEach((p, i) => {
-                    const targetBase = isTree ? p.treePos : p.scatterPos;
-                    let target = targetBase.clone();
-                    if(isTree) {
-                        target.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.2);
-                        target.multiplyScalar(pulse);
-                    }
+                    const targetBase = isTree ? p.treePos : p.scatterPos; let target = targetBase.clone();
+                    if(isTree) { target.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.2); target.multiplyScalar(pulse); }
                     p.pos.lerp(target, delta * 2.5 * p.speed);
-                    
                     let bounce = 0;
-                    // 这里加了严格判断：只有 isPlaying 且 isTree 时才跳
-                    if(isTree && isPlaying) {
-                        bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy * 5);
-                    }
-                    
+                    if(isTree && isPlaying) bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy * 5);
                     dummy.position.copy(p.pos); dummy.position.y += bounce;
                     dummy.lookAt(0, p.pos.y, 0); 
-                    dummy.scale.setScalar(0.4 * (isPlaying ? (1 + energy * 0.3) : 1)); // 停止时恢复正常大小
+                    dummy.scale.setScalar(0.4 * (isPlaying ? (1 + energy * 0.3) : 1));
                     dummy.updateMatrix();
                     meshRef.current.setMatrixAt(i, dummy.matrix);
                 });
@@ -247,72 +181,46 @@
             return (
                 <instancedMesh ref={meshRef} args={[null, null, count]}>
                     <boxGeometry args={[1, 0.8, 1]} />
-                    <meshStandardMaterial roughness={0.1} metalness={0.9} />
+                    {/* 修改材质：增加 emissive (自发光颜色为白色，配合实例颜色) 和 emissiveIntensity */}
+                    <meshStandardMaterial 
+                        ref={matRef}
+                        roughness={0.1} 
+                        metalness={0.8} 
+                        emissive="#ffffff" 
+                        emissiveIntensity={0} 
+                    />
                 </instancedMesh>
             );
         };
 
         const Scene = ({ colors, mode, setMode }) => {
             const [playing, setPlaying] = useState(false);
-            
             useEffect(() => {
-                const btnPlay = document.getElementById('btn-play');
-                const btnRemix = document.getElementById('btn-remix');
-                const btnSnap = document.getElementById('btn-snap');
-                const btnMorph = document.getElementById('btn-morph');
-
-                btnPlay.onclick = () => { 
-                    const isNowPlaying = audioSystem.toggle();
-                    setPlaying(isNowPlaying);
-                    if(isNowPlaying) {
-                        btnPlay.innerText = "⏸ PAUSE";
-                        btnPlay.classList.remove('primary');
-                    } else {
-                        btnPlay.innerText = "▶ PLAY MUSIC";
-                        btnPlay.classList.add('primary');
-                    }
-                };
-
-                btnRemix.onclick = () => window.changeColors(); 
-                btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
-                btnSnap.onclick = () => {
-                    const canvas = document.querySelector('canvas');
-                    const link = document.createElement('a'); link.download = 'WQC-Christmas.png'; link.href = canvas.toDataURL('image/png'); link.click();
-                };
+                const btnPlay = document.getElementById('btn-play'); const btnRemix = document.getElementById('btn-remix'); const btnMorph = document.getElementById('btn-morph'); const btnSnap = document.getElementById('btn-snap');
+                btnPlay.onclick = () => { const isNowPlaying = audioSystem.toggle(); setPlaying(isNowPlaying); if(isNowPlaying) { btnPlay.innerText = "⏸ PAUSE"; btnPlay.classList.remove('primary'); } else { btnPlay.innerText = "▶ PLAY MUSIC"; btnPlay.classList.add('primary'); } };
+                btnRemix.onclick = () => window.changeColors(); btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
+                btnSnap.onclick = () => { const canvas = document.querySelector('canvas'); const link = document.createElement('a'); link.download = 'WQC-Christmas.png'; link.href = canvas.toDataURL('image/png'); link.click(); };
             }, []);
 
             return (
                 <>
-                    {/* 3. 修复灯光：正面补光 */}
-                    {/* 基础环境光，提高亮度 */}
                     <hemisphereLight intensity={2.5} groundColor="#444" color="#fff" />
-                    
-                    {/* 侧后方主光，制造立体感 */}
                     <directionalLight position={[-10, 10, 5]} intensity={5} color="white" />
-                    
-                    {/* [新增] 正面强力补光，解决“正面黑”的问题 */}
                     <directionalLight position={[0, 0, 20]} intensity={4} color="#ffeecc" />
-                    
-                    {/* 彩色点光源 */}
                     <pointLight position={[10, 20, 10]} intensity={80} color={colors[1]} distance={50} />
                     <spotLight position={[0, 50, 0]} intensity={120} angle={0.5} color={colors[0]} penumbra={1} />
                     
                     <CatVoxels count={2000} colors={colors} mode={mode} isPlaying={playing} />
                     
-                    {/* 4. 新增：漫天飞雪 (背景雪花) */}
-                    {/* 这里的 Sparkles 范围更大，速度更慢，模拟下雪 */}
+                    {/* 背景雪花 */}
                     <Sparkles count={500} scale={[100, 100, 100]} size={6} speed={0.4} opacity={0.8} color="#ffffff" />
-                    
-                    {/* 原有的闪烁粒子 */}
+                    {/* 闪烁粒子 */}
                     <Sparkles count={200} scale={40} size={4} color={colors[2]} opacity={0.6} speed={1} />
                     
                     <group position={[0, -25, 0]}>
                         <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                             <Center>
-                                <Text3D 
-                                    font="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json"
-                                    size={4} height={0.5} curveSegments={12} bevelEnabled bevelThickness={0.1}
-                                >
+                                <Text3D font="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json" size={4} height={0.5} curveSegments={12} bevelEnabled bevelThickness={0.1}>
                                     TO WQC
                                     <meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={0.8} />
                                 </Text3D>
@@ -320,8 +228,9 @@
                         </Float>
                     </group>
 
+                    {/* 后期辉光效果，让自发光材质产生光晕 */}
                     <EffectComposer disableNormalPass>
-                        <Bloom luminanceThreshold={0.5} mipmapBlur intensity={1.5} radius={0.6} />
+                        <Bloom luminanceThreshold={0.6} mipmapBlur intensity={1.8} radius={0.5} />
                         <Vignette eskil={false} offset={0.1} darkness={1.0} />
                     </EffectComposer>
                 </>
@@ -331,19 +240,10 @@
         const App = () => {
             const [mode, setMode] = useState('TREE');
             const [colors, setColors] = useState([new THREE.Color('#FFD700'), new THREE.Color('#00FF9D'), new THREE.Color('#FF0080')]);
-            
             useEffect(() => {
-                window.changeColors = () => {
-                    setColors([
-                        new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)),
-                        new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)),
-                        new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16))
-                    ]);
-                };
-                const l = document.getElementById('loader');
-                if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); }, 2000);
+                window.changeColors = () => { setColors([new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)), new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)), new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16))]); };
+                const l = document.getElementById('loader'); if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); }, 2000);
             }, []);
-
             return (
                 <Canvas dpr={[1, 1.5]} gl={{ antialias: false, toneMapping: THREE.ReinhardToneMapping }} camera={{ position: [0, 0, 60], fov: 45 }}>
                     <Suspense fallback={null}>
@@ -353,9 +253,7 @@
                 </Canvas>
             );
         };
-
-        const root = createRoot(document.getElementById('canvas-container'));
-        root.render(<App />);
+        const root = createRoot(document.getElementById('canvas-container')); root.render(<App />);
     </script>
 </body>
 </html>
