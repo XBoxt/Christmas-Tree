@@ -2,275 +2,387 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Arix Signature Tree - For WQC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For WQC | Eternal Edition</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #000; overflow: hidden; font-family: 'Times New Roman', serif; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-        #loading-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #D4AF37; font-size: 20px; letter-spacing: 4px; pointer-events: none;
-            transition: opacity 1s;
-        }
-        .instruction {
-            position: absolute; bottom: 30px; width: 100%; text-align: center;
-            color: #D4AF37; font-size: 12px; letter-spacing: 2px; opacity: 0.5; pointer-events: none;
-            text-transform: uppercase;
-        }
+        :root { --neon-gold: #ffd700; --neon-green: #00ff9d; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #020202; overflow: hidden; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        
+        /* UI 层 */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; box-sizing: border-box; }
+        
+        .header { pointer-events: auto; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); padding: 20px 30px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); display: inline-block; animation: slideDown 1.5s cubic-bezier(0.19, 1, 0.22, 1); }
+        h1 { margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; background: linear-gradient(135deg, #fff 0%, var(--neon-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub-text { font-size: 0.8rem; letter-spacing: 2px; color: rgba(255, 255, 255, 0.6); margin-top: 5px; text-transform: uppercase; }
+
+        /* 按钮组 */
+        .actions { pointer-events: auto; display: flex; gap: 10px; flex-wrap: wrap; animation: slideUp 1.5s cubic-bezier(0.19, 1, 0.22, 1); }
+        .btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; }
+        .btn:hover { background: var(--neon-gold); color: black; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
+        /* Loading */
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease, visibility 0.8s; }
+        .loading-text { color: var(--neon-green); font-family: monospace; letter-spacing: 4px; font-size: 1.2rem; animation: pulse 1s infinite; margin-bottom: 10px; }
+        .loading-tip { color: #555; font-size: 0.8rem; }
+
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "three": "https://esm.sh/three@0.160.0",
+            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
+            "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber",
+            "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.0?external=react,react-dom,three,@react-three/fiber",
+            "uuid": "https://esm.sh/uuid@9.0.1"
+        }
+    }
+    </script>
 </head>
 <body>
-    <div id="loading-text">INITIALIZING...</div>
-    <div class="instruction">Click to Interact</div>
+    <div id="loader">
+        <div class="loading-text">INITIALIZING SYSTEM...</div>
+        <div class="loading-tip">Creating Voxel Cats for WQC</div>
+    </div>
 
-    <script>
-        // --- 全局变量配置 ---
-        const CONFIG = {
-            count: 2500,
-            goldColor: 0xFFD700,
-            emeraldColor: 0x001a14,
-            treeHeight: 14,
-            treeRadius: 5,
-            scatterRadius: 30
-        };
+    <div id="ui-layer">
+        <div class="header">
+            <h1>TO WQC</h1>
+            <div class="sub-text">MERRY CHRISTMAS · ETERNAL EDITION</div>
+        </div>
+        
+        <div class="actions">
+            <div id="btn-play" class="btn">▶ PLAY MUSIC</div>
+            <div id="btn-remix" class="btn">🎨 REMIX COLORS</div>
+            <div id="btn-morph" class="btn">✨ MORPH SHAPE</div>
+            <div id="btn-snap" class="btn">📷 SNAPSHOT</div>
+        </div>
+    </div>
+    
+    <div id="canvas-container"></div>
 
-        // --- 核心逻辑 ---
-        window.onload = function() {
-            try {
-                init();
-            } catch (e) {
-                alert("Error: " + e.message);
+    <script type="text/babel" data-type="module">
+        import React, { useState, useMemo, useRef, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import * as THREE from 'three';
+        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+        import { OrbitControls, Text, Float, Sparkles, Stars, CameraShake } from '@react-three/drei';
+        import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
+
+        // --- 1. 音频核心 (Audio Engine) ---
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.analyser = null;
+                this.dataArray = null;
+                this.isPlaying = false;
             }
-        };
 
-        let scene, camera, renderer, particles, dummy, textSprite;
-        let positionsTree = [], positionsScatter = [];
-        let state = { active: false, t: 0 }; // t: 0=scatter, 1=tree
-        let clock = new THREE.Clock();
-
-        function init() {
-            // 1. 场景搭建
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(CONFIG.emeraldColor);
-            scene.fog = new THREE.FogExp2(CONFIG.emeraldColor, 0.02);
-
-            // 2. 相机
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 0, 25);
-
-            // 3. 渲染器
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.outputEncoding = THREE.sRGBEncoding;
-            document.body.appendChild(renderer.domElement);
-
-            // 4. 灯光 (模拟金碧辉煌)
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-            scene.add(ambientLight);
-
-            const spotLight = new THREE.SpotLight(0xfff0dd, 5);
-            spotLight.position.set(10, 30, 20);
-            spotLight.angle = 0.5;
-            spotLight.penumbra = 0.5;
-            scene.add(spotLight);
-
-            const purpleLight = new THREE.PointLight(0x8800ff, 2, 50);
-            purpleLight.position.set(-10, -10, 10);
-            scene.add(purpleLight);
-
-            const goldLight = new THREE.PointLight(0xffaa00, 2, 50);
-            goldLight.position.set(10, 0, 10);
-            scene.add(goldLight);
-
-            // 5. 创建 "TO WQC" 纹理 (Canvas绘制，不依赖外部字体文件)
-            const textTexture = createTextTexture("TO WQC");
-            const textMat = new THREE.SpriteMaterial({ 
-                map: textTexture, 
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.8
-            });
-            textSprite = new THREE.Sprite(textMat);
-            textSprite.scale.set(6, 3, 1); // 调整宽高比
-            textSprite.position.set(4, -5, 2);
-            scene.add(textSprite);
-
-            // 6. 粒子系统 (InstancedMesh)
-            const geometry = new THREE.OctahedronGeometry(0.12, 0);
-            const material = new THREE.MeshPhysicalMaterial({
-                color: CONFIG.goldColor,
-                metalness: 0.9,
-                roughness: 0.1,
-                clearcoat: 1.0,
-                clearcoatRoughness: 0.1,
-                emissive: 0xaa4400,
-                emissiveIntensity: 0.2
-            });
-
-            particles = new THREE.InstancedMesh(geometry, material, CONFIG.count);
-            
-            // 预计算坐标
-            dummy = new THREE.Object3D();
-            const color = new THREE.Color();
-            
-            for(let i = 0; i < CONFIG.count; i++) {
-                // A. 树形坐标
-                const ratio = i / CONFIG.count;
-                const angle = i * 2.4;
-                const r = (1 - ratio) * CONFIG.treeRadius; // 下宽上窄 -> 上宽下窄? No, ratio 0 is top.
-                // Re-map: 0 is top of array. 
-                // Let's make ratio 0 = top (y positive), ratio 1 = bottom (y negative)
-                const y = THREE.MathUtils.lerp(CONFIG.treeHeight/2, -CONFIG.treeHeight/2, ratio);
-                const radius = THREE.MathUtils.lerp(0, CONFIG.treeRadius, ratio);
-                
-                positionsTree.push(
-                    Math.cos(angle) * (radius + Math.random()*0.5),
-                    y,
-                    Math.sin(angle) * (radius + Math.random()*0.5)
-                );
-
-                // B. 散落坐标 (球体)
-                const u = Math.random();
-                const v = Math.random();
-                const theta = 2 * Math.PI * u;
-                const phi = Math.acos(2 * v - 1);
-                const rad = CONFIG.scatterRadius * Math.cbrt(Math.random());
-                
-                positionsScatter.push(
-                    rad * Math.sin(phi) * Math.cos(theta),
-                    rad * Math.sin(phi) * Math.sin(theta),
-                    rad * Math.cos(phi)
-                );
-                
-                // 初始化在散落位置
-                dummy.position.set(positionsScatter[i*3], positionsScatter[i*3+1], positionsScatter[i*3+2]);
-                dummy.updateMatrix();
-                particles.setMatrixAt(i, dummy.matrix);
+            init() {
+                if (this.ctx) return;
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 64; 
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             }
-            
-            scene.add(particles);
 
-            // 7. 星空背景
-            createStars();
+            playMelody() {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                this.isPlaying = true;
 
-            // 8. 交互事件
-            window.addEventListener('resize', onWindowResize, false);
-            window.addEventListener('click', () => { state.active = !state.active; });
-            window.addEventListener('touchstart', (e) => { e.preventDefault(); state.active = !state.active; }, {passive: false});
+                // 喵喵版 Jingle Bells 乐谱
+                const notes = [
+                    {f:659,d:0.2}, {f:659,d:0.2}, {f:659,d:0.4}, // 3 3 3
+                    {f:659,d:0.2}, {f:659,d:0.2}, {f:659,d:0.4}, // 3 3 3
+                    {f:659,d:0.2}, {f:783,d:0.2}, {f:523,d:0.2}, {f:587,d:0.2}, {f:659,d:0.8}, // 3 5 1 2 3
+                    {f:698,d:0.2}, {f:698,d:0.2}, {f:698,d:0.2}, {f:698,d:0.2}, // 4 4 4 4
+                    {f:698,d:0.2}, {f:659,d:0.2}, {f:659,d:0.2}, {f:659,d:0.2}, // 4 3 3 3
+                    {f:783,d:0.2}, {f:783,d:0.2}, {f:698,d:0.2}, {f:587,d:0.2}, {f:523,d:0.8}  // 5 5 4 2 1
+                ];
 
-            // 移除 Loading
-            document.getElementById('loading-text').style.opacity = 0;
-            
-            // 开始动画
-            animate();
-        }
+                let time = this.ctx.currentTime;
+                // 循环播放两次以延长体验
+                const fullLoop = [...notes, {f:0, d:0.5}, ...notes];
 
-        // --- 辅助函数：绘制文字纹理 ---
-        function createTextTexture(message) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 1024; 
-            canvas.height = 512;
-            
-            // 发光效果
-            ctx.shadowColor = "#FFD700";
-            ctx.shadowBlur = 20;
-            
-            ctx.fillStyle = "rgba(0,0,0,0)"; // 透明背景
-            ctx.fillRect(0,0, canvas.width, canvas.height);
-            
-            ctx.font = "bold 120px 'Times New Roman', serif";
-            ctx.fillStyle = "#ffffff";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(message, canvas.width/2, canvas.height/2);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            return texture;
-        }
+                fullLoop.forEach((n, i) => {
+                    if(n.f > 0) {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        const filter = this.ctx.createBiquadFilter();
 
-        function createStars() {
-            const starGeo = new THREE.BufferGeometry();
-            const starCount = 3000;
-            const pos = new Float32Array(starCount * 3);
-            for(let i=0; i<starCount*3; i++) {
-                pos[i] = (Math.random() - 0.5) * 100;
+                        // 混合波形
+                        osc.type = i % 3 === 0 ? 'triangle' : 'sawtooth'; 
+                        osc.frequency.value = n.f;
+
+                        // Wah-Wah 滤波器效果 (模拟猫叫)
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(200, time);
+                        filter.frequency.linearRampToValueAtTime(n.f * 3.5, time + 0.1); 
+                        filter.frequency.exponentialRampToValueAtTime(200, time + n.d * 0.8);
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(this.analyser); // 连接到分析器
+                        this.analyser.connect(this.ctx.destination);
+
+                        osc.start(time);
+                        gain.gain.setValueAtTime(0, time);
+                        gain.gain.linearRampToValueAtTime(0.25, time + 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.001, time + n.d * 0.9);
+                        osc.stop(time + n.d);
+                    }
+                    time += n.d * 0.45;
+                });
             }
-            starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.2, transparent: true, opacity: 0.6});
-            const stars = new THREE.Points(starGeo, starMat);
-            scene.add(stars);
+
+            getEnergy() {
+                if (!this.analyser) return 0;
+                this.analyser.getByteFrequencyData(this.dataArray);
+                let sum = 0;
+                // 取低频部分
+                for(let i=0; i<6; i++) sum += this.dataArray[i];
+                return sum / 6 / 255; 
+            }
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        const audioSystem = new AudioEngine();
 
-        // --- 动画循环 ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = clock.getDelta();
-            const time = clock.getElapsedTime();
-
-            // 1. 状态插值 (Lerp)
-            const targetT = state.active ? 1 : 0;
-            state.t += (targetT - state.t) * 2.0 * delta; // 速度系数
-
-            // 2. 更新粒子
-            if (particles) {
-                for (let i = 0; i < CONFIG.count; i++) {
-                    const i3 = i * 3;
+        // --- 2. 粒子组件 (Voxel Cats) ---
+        const CatVoxels = ({ count = 2800, colors, mode, isPlaying }) => {
+            const bodyRef = useRef();
+            const headRef = useRef();
+            const dummy = useMemo(() => new THREE.Object3D(), []);
+            
+            const particles = useMemo(() => {
+                const temp = [];
+                for (let i = 0; i < count; i++) {
+                    const t = i / count;
+                    // 树形：螺旋
+                    const angle = t * Math.PI * 30;
+                    const radius = (1 - t) * 16;
+                    const y = t * 45 - 22;
+                    const treePos = new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
                     
-                    // 获取当前插值位置
-                    const sx = positionsScatter[i3], sy = positionsScatter[i3+1], sz = positionsScatter[i3+2];
-                    const tx = positionsTree[i3], ty = positionsTree[i3+1], tz = positionsTree[i3+2];
+                    // 散开形态
+                    const scatterPos = new THREE.Vector3(
+                        (Math.random()-0.5)*90, (Math.random()-0.5)*70, (Math.random()-0.5)*90
+                    );
 
-                    let x = sx + (tx - sx) * state.t;
-                    let y = sy + (ty - sy) * state.t;
-                    let z = sz + (tz - sz) * state.t;
+                    temp.push({
+                        treePos, scatterPos,
+                        pos: scatterPos.clone(),
+                        speed: Math.random() * 0.5 + 0.5,
+                        phase: Math.random() * Math.PI * 2,
+                        colorType: Math.random()
+                    });
+                }
+                return temp;
+            }, [count]);
 
-                    // 呼吸效果 (仅在变成树的时候)
-                    if (state.t > 0.8) {
-                        x += Math.cos(time + ty) * 0.02;
-                        z += Math.sin(time + ty) * 0.02;
+            // 颜色动态更新
+            useEffect(() => {
+                if(!bodyRef.current) return;
+                particles.forEach((p, i) => {
+                    const c = p.colorType < 0.3 ? colors[0] : (p.colorType < 0.6 ? colors[1] : colors[2]);
+                    bodyRef.current.setColorAt(i, c);
+                    headRef.current.setColorAt(i, c);
+                });
+                bodyRef.current.instanceColor.needsUpdate = true;
+                headRef.current.instanceColor.needsUpdate = true;
+            }, [colors]);
+
+            useFrame((state, delta) => {
+                if(!bodyRef.current) return;
+                
+                const energy = audioSystem.getEnergy(); // 获取音频能量 (0-1)
+                const pulse = 1 + energy * 0.6; // 膨胀系数
+
+                const time = state.clock.elapsedTime;
+                const isTree = mode === 'TREE';
+
+                particles.forEach((p, i) => {
+                    // 目标位置
+                    const targetBase = isTree ? p.treePos : p.scatterPos;
+                    let target = targetBase.clone();
+
+                    if (isTree) {
+                        const rot = time * 0.15;
+                        target.applyAxisAngle(new THREE.Vector3(0,1,0), rot);
+                        // 音乐律动：膨胀
+                        target.multiplyScalar(pulse);
+                    }
+                    
+                    p.pos.lerp(target, delta * 3 * p.speed);
+
+                    // 跳舞逻辑 (Bounce)
+                    let bounce = 0;
+                    if (isTree && isPlaying) {
+                        // 随节奏跳动
+                        bounce = Math.sin(time * 15 + p.phase) * (0.2 + energy * 2);
                     }
 
-                    dummy.position.set(x, y, z);
+                    dummy.position.copy(p.pos);
+                    dummy.position.y += bounce;
+                    dummy.lookAt(0, p.pos.y, 0);
                     
-                    // 自转
-                    dummy.rotation.set(Math.sin(time*0.5 + i), Math.cos(time*0.3 + i), 0);
-                    
-                    // 缩放特效 (切换时变大一下)
-                    const scaleEffect = 1 + Math.sin(state.t * Math.PI) * 0.5;
-                    dummy.scale.setScalar(scaleEffect * (0.5 + Math.random()*0.5));
+                    // 随能量变大
+                    const scale = 0.4 * (1 + energy * 0.3);
+                    dummy.scale.setScalar(scale);
 
                     dummy.updateMatrix();
-                    particles.setMatrixAt(i, dummy.matrix);
+                    bodyRef.current.setMatrixAt(i, dummy.matrix);
+                    headRef.current.setMatrixAt(i, dummy.matrix);
+                });
+
+                bodyRef.current.instanceMatrix.needsUpdate = true;
+                headRef.current.instanceMatrix.needsUpdate = true;
+            });
+
+            const mat = <meshStandardMaterial roughness={0.2} metalness={0.8} />;
+            return (
+                <group>
+                    <instancedMesh ref={bodyRef} args={[null, null, count]}>{mat}<boxGeometry args={[1, 0.8, 1.2]} /></instancedMesh>
+                    <instancedMesh ref={headRef} args={[null, null, count]}>{mat}<primitive object={new THREE.BoxGeometry(0.8, 0.8, 0.8).translate(0, 0.8, 0.5)} attach="geometry" /></instancedMesh>
+                </group>
+            );
+        };
+
+        // --- 3. 场景主控 (Scene) ---
+        const Scene = ({ colors, mode, setMode }) => {
+            const [playing, setPlaying] = useState(false);
+            
+            // 绑定外部按钮事件
+            useEffect(() => {
+                const btnPlay = document.getElementById('btn-play');
+                const btnRemix = document.getElementById('btn-remix');
+                const btnMorph = document.getElementById('btn-morph');
+                const btnSnap = document.getElementById('btn-snap');
+
+                // 播放音乐
+                const playFn = () => {
+                    if(!playing) {
+                        setPlaying(true);
+                        audioSystem.playMelody();
+                        btnPlay.style.opacity = 0.5;
+                        btnPlay.innerText = "▶ PLAYING...";
+                    }
+                };
+                
+                // 截图
+                const snapFn = () => {
+                    const canvas = document.querySelector('canvas');
+                    if(canvas) {
+                        const link = document.createElement('a');
+                        link.download = 'Christmas-For-WQC.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
+                };
+
+                // 变形
+                const morphFn = () => setMode(prev => prev === 'TREE' ? 'SCATTER' : 'TREE');
+
+                btnPlay.onclick = playFn;
+                btnSnap.onclick = snapFn;
+                btnMorph.onclick = morphFn;
+                // Remix在父组件处理，这里不需要绑定
+
+            }, [playing]);
+
+            // 摄像机入场动画
+            useFrame((state) => {
+                if (!playing) return;
+                const t = state.clock.elapsedTime;
+                // 缓慢拉远
+                state.camera.position.lerp(new THREE.Vector3(0, 0, 60 + Math.sin(t*0.2)*5), 0.02);
+                state.camera.lookAt(0, 0, 0);
+            });
+
+            return (
+                <>
+                    <ambientLight intensity={0.4} />
+                    <pointLight position={[10, 20, 10]} intensity={80} color={colors[1]} />
+                    <pointLight position={[-10, -10, -10]} intensity={50} color={colors[2]} />
+                    <spotLight position={[0, 50, 0]} intensity={200} angle={0.5} penumbra={1} color={colors[0]} castShadow />
+
+                    <CatVoxels count={3000} colors={colors} mode={mode} isPlaying={playing} />
+
+                    <Sparkles count={800} scale={60} size={5} speed={0.4} opacity={0.6} color={colors[2]} />
+                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                    
+                    <group position={[0, -26, 0]}>
+                        <Float speed={2} rotationIntensity={0.2} floatIntensity={0.2}>
+                            <Text
+                                fontSize={8}
+                                color={colors[0]}
+                                anchorX="center"
+                                anchorY="middle"
+                                outlineWidth={0.2}
+                                outlineColor={colors[2]}
+                                font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff" 
+                            >
+                                TO WQC
+                            </Text>
+                        </Float>
+                    </group>
+
+                    <EffectComposer disableNormalPass>
+                        <Bloom luminanceThreshold={0.8} mipmapBlur intensity={1.8} radius={0.4} />
+                        <ChromaticAberration offset={[0.002, 0.002]} /> 
+                        <Vignette eskil={false} offset={0.1} darkness={1.1} />
+                    </EffectComposer>
+                    
+                    <CameraShake yawFrequency={0.1} pitchFrequency={0.1} rollFrequency={0.1} intensity={playing ? 0.2 : 0} />
+                </>
+            );
+        };
+
+        const App = () => {
+            const [mode, setMode] = useState('TREE');
+            
+            const getColors = () => {
+                const h = Math.random();
+                return [
+                    new THREE.Color().setHSL(h, 1, 0.6),      
+                    new THREE.Color().setHSL((h+0.6)%1, 0.8, 0.5), 
+                    new THREE.Color().setHSL((h+0.3)%1, 1, 0.8)    
+                ];
+            };
+            const [colors, setColors] = useState(getColors());
+
+            useEffect(() => {
+                // 绑定 Remix 按钮
+                const btnRemix = document.getElementById('btn-remix');
+                btnRemix.onclick = () => setColors(getColors());
+
+                // 移除 Loading
+                const loader = document.getElementById('loader');
+                if(loader) {
+                    setTimeout(() => { loader.style.opacity = 0; }, 500);
+                    setTimeout(() => { loader.style.display = 'none'; }, 1500);
                 }
-                particles.instanceMatrix.needsUpdate = true;
-                // 整体缓慢旋转
-                particles.rotation.y = time * 0.05;
-            }
+            }, []);
 
-            // 3. 文字浮动动画
-            if(textSprite) {
-                textSprite.position.y = -5 + Math.sin(time * 1.5) * 0.3;
-                // 出现/消失
-                const scaleTarget = state.active ? 1 : 0;
-                // 简单的平滑过渡
-                const currentScale = textSprite.scale.x; 
-                // 基础scale是6，所以我们在0和6之间插值
-                // 这里简单处理：如果active，保持显示，否则慢慢变小（可选，目前一直显示也挺好看）
-            }
+            return (
+                <Canvas dpr={[1, 1.5]} gl={{ antialias: false }} camera={{ position: [0, 0, 10], fov: 45 }}>
+                    <Scene colors={colors} mode={mode} setMode={setMode} />
+                    <OrbitControls enablePan={false} maxDistance={90} minDistance={10} />
+                </Canvas>
+            );
+        };
 
-            renderer.render(scene, camera);
-        }
+        const root = createRoot(document.getElementById('canvas-container'));
+        root.render(<App />);
     </script>
 </body>
 </html>
