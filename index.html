@@ -43,7 +43,7 @@
         @keyframes loadAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     </style>
 
-    <script src="https://cdn.bootcdn.net/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="importmap">
     {
@@ -64,7 +64,7 @@
     <div id="loader">
         <div class="loading-text">INITIALIZING...</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
-        <div style="color: #666; font-size: 12px; margin-top: 10px">Ver 5.0 China Optimized</div>
+        <div style="color: #666; font-size: 12px; margin-top: 10px">Ver 5.0 Ultimate</div>
     </div>
 
     <div id="ui-layer">
@@ -83,21 +83,21 @@
     <div id="canvas-container" style="position: absolute; top:0; left:0; width:100%; height:100%"></div>
 
     <script>
+        // 错误捕获
         window.onerror = function(msg, url, line) {
             const el = document.getElementById('error-log');
             el.style.display = 'block';
             el.innerHTML += `Error: ${msg} <br>`;
-            // 如果报错，强制移除 loader 让人至少看到尝试加载的结果
             document.getElementById('loader').style.display = 'none';
         };
-        // 5秒强制超时保护：如果5秒还在loading，直接关掉loader
+        // 超时保护
         setTimeout(() => {
             const l = document.getElementById('loader');
             if(l && l.style.display !== 'none') {
                 l.style.opacity = 0;
                 setTimeout(()=>l.style.display='none', 500);
             }
-        }, 5000);
+        }, 8000); // 3D资源加载可能需要久一点，给8秒
     </script>
 
     <script type="text/babel" data-type="module">
@@ -105,10 +105,10 @@
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { OrbitControls, Text3D, Center, Float, Sparkles, Stars, CameraShake } from '@react-three/drei';
-        import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
+        import { OrbitControls, Text3D, Center, Float, Sparkles } from '@react-three/drei';
+        import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
-        // --- Audio Engine ---
+        // --- Audio Engine (简易合成器) ---
         class AudioEngine {
             constructor() { this.ctx = null; this.analyser = null; this.dataArray = null; }
             init() {
@@ -122,14 +122,14 @@
             playMelody() {
                 if (!this.ctx) this.init();
                 if (this.ctx.state === 'suspended') this.ctx.resume();
-                // 简单的旋律数据
+                // 铃儿响叮当 简易旋律
                 const notes = [
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
-                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Jingle bells
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, // Jingle bells
+                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8} // Jingle all the way
                 ];
                 let time = this.ctx.currentTime;
-                // 循环3遍
+                // 循环播放
                 const loop = [...notes, {f:0,d:0.5}, ...notes, {f:0,d:0.5}, ...notes];
                 loop.forEach((n, i) => {
                     if(n.f > 0) {
@@ -139,7 +139,7 @@
                         osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
                         osc.start(time);
                         gain.gain.setValueAtTime(0, time);
-                        gain.gain.linearRampToValueAtTime(0.2, time + 0.05);
+                        gain.gain.linearRampToValueAtTime(0.1, time + 0.05); // 音量调小点，防炸耳
                         gain.gain.exponentialRampToValueAtTime(0.001, time + n.d * 0.9);
                         osc.stop(time + n.d);
                     }
@@ -155,8 +155,8 @@
         }
         const audioSystem = new AudioEngine();
 
-        // --- 核心猫咪粒子 ---
-        const CatVoxels = ({ count = 2200, colors, mode, isPlaying }) => {
+        // --- 核心粒子组件 ---
+        const CatVoxels = ({ count = 2000, colors, mode, isPlaying }) => {
             const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
             
@@ -164,14 +164,21 @@
                 const temp = [];
                 for (let i = 0; i < count; i++) {
                     const t = i / count;
-                    // 树形态
+                    // 树形态计算
                     const angle = t * Math.PI * 25;
                     const radius = (1 - t) * 15;
                     const y = t * 40 - 20;
                     const treePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
-                    // 散开形态
+                    // 散开形态计算
                     const scatterPos = new THREE.Vector3((Math.random()-0.5)*80, (Math.random()-0.5)*60, (Math.random()-0.5)*80);
-                    temp.push({ treePos, scatterPos, pos: scatterPos.clone(), speed: Math.random()*0.5+0.5, phase: Math.random()*Math.PI*2, colorType: Math.random() });
+                    temp.push({ 
+                        treePos, 
+                        scatterPos, 
+                        pos: scatterPos.clone(), 
+                        speed: Math.random()*0.5+0.5, 
+                        phase: Math.random()*Math.PI*2, 
+                        colorType: Math.random() 
+                    });
                 }
                 return temp;
             }, [count]);
@@ -196,13 +203,15 @@
                     const targetBase = isTree ? p.treePos : p.scatterPos;
                     let target = targetBase.clone();
                     if(isTree) {
-                        target.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.1);
+                        // 旋转特效
+                        target.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.2);
                         target.multiplyScalar(pulse);
                     }
+                    // 移动插值
                     p.pos.lerp(target, delta * 2.5 * p.speed);
                     
                     let bounce = 0;
-                    if(isTree && isPlaying) bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy);
+                    if(isTree && isPlaying) bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy * 5);
                     
                     dummy.position.copy(p.pos); dummy.position.y += bounce;
                     dummy.lookAt(0, p.pos.y, 0); 
@@ -224,7 +233,6 @@
         const Scene = ({ colors, mode, setMode }) => {
             const [playing, setPlaying] = useState(false);
             
-            // 绑定事件
             useEffect(() => {
                 const btnPlay = document.getElementById('btn-play');
                 const btnRemix = document.getElementById('btn-remix');
@@ -232,7 +240,7 @@
                 const btnMorph = document.getElementById('btn-morph');
 
                 btnPlay.onclick = () => { if(!playing) { setPlaying(true); audioSystem.playMelody(); btnPlay.innerText = "PLAYING..."; btnPlay.style.opacity = 0.5; } };
-                btnRemix.onclick = () => window.changeColors(); // 调用外部函数
+                btnRemix.onclick = () => window.changeColors(); 
                 btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
                 btnSnap.onclick = () => {
                     const canvas = document.querySelector('canvas');
@@ -246,26 +254,26 @@
                     <pointLight position={[10, 20, 10]} intensity={50} color={colors[1]} />
                     <spotLight position={[0, 50, 0]} intensity={100} angle={0.5} color={colors[0]} />
                     
-                    <CatVoxels count={2500} colors={colors} mode={mode} isPlaying={playing} />
-                    <Sparkles count={500} scale={50} size={5} color={colors[2]} opacity={0.6} />
+                    <CatVoxels count={2000} colors={colors} mode={mode} isPlaying={playing} />
+                    <Sparkles count={300} scale={50} size={5} color={colors[2]} opacity={0.6} speed={0.5} />
                     
-                    {/* 3D 文字：使用可靠的 Font URL (jsdelivr) */}
+                    {/* 3D 文字 */}
                     <group position={[0, -25, 0]}>
-                        <Float speed={2}>
+                        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                             <Center>
                                 <Text3D 
                                     font="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json"
-                                    size={5} height={0.5} curveSegments={12}
+                                    size={4} height={0.5} curveSegments={12} bevelEnabled bevelThickness={0.1}
                                 >
                                     TO WQC
-                                    <meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={0.5} />
+                                    <meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={0.8} />
                                 </Text3D>
                             </Center>
                         </Float>
                     </group>
 
                     <EffectComposer disableNormalPass>
-                        <Bloom luminanceThreshold={0.8} mipmapBlur intensity={1.5} radius={0.5} />
+                        <Bloom luminanceThreshold={0.5} mipmapBlur intensity={1.5} radius={0.6} />
                         <Vignette eskil={false} offset={0.1} darkness={1.1} />
                     </EffectComposer>
                 </>
@@ -277,7 +285,6 @@
             const [colors, setColors] = useState([new THREE.Color('#FFD700'), new THREE.Color('#00FF9D'), new THREE.Color('#FF0080')]);
             
             useEffect(() => {
-                // 暴露给外部按钮使用
                 window.changeColors = () => {
                     setColors([
                         new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)),
@@ -285,17 +292,17 @@
                         new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16))
                     ]);
                 };
-                // 成功加载后移除 loader
+                // 加载完成后移除 Loading
                 const l = document.getElementById('loader');
-                if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); }, 500);
+                if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); }, 1500);
             }, []);
 
             return (
-                <Canvas dpr={[1, 1.5]} gl={{ antialias: false }} camera={{ position: [0, 0, 60], fov: 45 }}>
+                <Canvas dpr={[1, 1.5]} gl={{ antialias: false, toneMapping: THREE.ReinhardToneMapping }} camera={{ position: [0, 0, 60], fov: 45 }}>
                     <Suspense fallback={null}>
                         <Scene colors={colors} mode={mode} setMode={setMode} />
                     </Suspense>
-                    <OrbitControls enablePan={false} maxDistance={90} minDistance={10} autoRotate={false} />
+                    <OrbitControls enablePan={false} maxDistance={90} minDistance={20} autoRotate={true} autoRotateSpeed={0.5} />
                 </Canvas>
             );
         };
