@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For WQC | Cute Christmas</title>
+    <title>For WQC | Crystal Christmas</title>
     <style>
         :root { --neon-gold: #ffd700; }
+        
+        /* 背景：保持你喜欢的节日渐变 */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; 
             background: radial-gradient(circle at 50% 40%, #5e0f12 0%, #2d4a22 60%, #0d1f0d 100%);
             overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
         
+        /* UI 层布局优化：按钮下沉居中 */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 40px; }
         
+        /* 删除了 .header-panel (顶部的框) */
+
+        /* 按钮组样式优化：更精致的磨砂玻璃感 */
         .actions { pointer-events: auto; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
         .btn { 
             background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); 
@@ -22,6 +28,8 @@
         }
         .btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .btn:active { transform: scale(0.95); }
+        
+        /* 播放按钮高亮 */
         .btn.primary { background: rgba(255, 215, 0, 0.15); border-color: var(--neon-gold); color: var(--neon-gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
         .btn.primary:hover { background: rgba(255, 215, 0, 0.25); box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
 
@@ -54,7 +62,7 @@
 <body>
     <div id="error-log"></div>
     <div id="loader">
-        <div class="loading-text">LOADING CUTE SURPRISE</div>
+        <div class="loading-text">LOADING SURPRISE</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
     </div>
 
@@ -96,10 +104,14 @@
         // --- Audio Engine ---
         class AudioEngine {
             constructor() { 
-                this.ctx = null; this.analyser = null; this.dataArray = null;
-                this.nextNoteTime = 0; this.timerID = null;
+                this.ctx = null; 
+                this.analyser = null; 
+                this.dataArray = null;
+                this.nextNoteTime = 0;
+                this.timerID = null;
                 this.notes = [
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, 
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, 
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4}, 
                     {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}, 
                     {f:587,d:0.2},{f:587,d:0.2},{f:659,d:0.2},{f:587,d:0.2},{f:783,d:0.4} 
                 ];
@@ -108,40 +120,60 @@
             init() {
                 if (this.ctx) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AC(); this.analyser = this.ctx.createAnalyser();
-                this.analyser.fftSize = 64; this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.ctx = new AC();
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 64; 
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             }
             scheduler() {
                 while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
                     this.playNote(this.notes[this.currentNoteIndex], this.nextNoteTime);
                     this.nextNoteTime += this.notes[this.currentNoteIndex].d * 0.45;
                     this.currentNoteIndex++;
-                    if (this.currentNoteIndex >= this.notes.length) { this.currentNoteIndex = 0; this.nextNoteTime += 0.5; }
+                    if (this.currentNoteIndex >= this.notes.length) {
+                        this.currentNoteIndex = 0; 
+                        this.nextNoteTime += 0.5; 
+                    }
                 }
                 this.timerID = window.setTimeout(this.scheduler.bind(this), 25);
             }
             playNote(note, time) {
                 if(note.f === 0) return;
-                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
                 osc.type = 'triangle'; osc.frequency.value = note.f;
                 osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
-                osc.start(time); gain.gain.setValueAtTime(0, time);
+                osc.start(time);
+                gain.gain.setValueAtTime(0, time);
                 gain.gain.linearRampToValueAtTime(0.15, time + 0.05);
                 gain.gain.exponentialRampToValueAtTime(0.001, time + note.d * 0.9);
                 osc.stop(time + note.d);
             }
             toggle() {
-                if (!this.ctx) { this.init(); this.nextNoteTime = this.ctx.currentTime + 0.1; this.scheduler(); return true; }
-                if (this.ctx.state === 'suspended') { this.ctx.resume(); return true; } else { this.ctx.suspend(); return false; }
+                if (!this.ctx) {
+                    this.init();
+                    this.nextNoteTime = this.ctx.currentTime + 0.1;
+                    this.scheduler();
+                    return true;
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                    return true;
+                } else {
+                    this.ctx.suspend();
+                    return false;
+                }
             }
             getEnergy() {
-                if (!this.analyser) return 0; this.analyser.getByteFrequencyData(this.dataArray);
-                let sum = 0; for(let i=0; i<6; i++) sum += this.dataArray[i]; return sum / 6 / 255; 
+                if (!this.analyser) return 0;
+                this.analyser.getByteFrequencyData(this.dataArray);
+                let sum = 0; for(let i=0; i<6; i++) sum += this.dataArray[i];
+                return sum / 6 / 255; 
             }
         }
         const audioSystem = new AudioEngine();
 
-        // --- CatVoxels (现在是可爱的小珠子) ---
+        // --- CatVoxels ---
         const CatVoxels = ({ count = 2000, colors, mode, isPlaying }) => {
             const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -192,8 +224,7 @@
                     
                     dummy.position.copy(p.pos); dummy.position.y += bounce;
                     dummy.lookAt(0, p.pos.y, 0); 
-                    // 稍微调大一点尺寸，让珠子更饱满
-                    dummy.scale.setScalar(0.5 * (isPlaying ? (1 + energy * 0.3) : 1)); 
+                    dummy.scale.setScalar(0.4 * (isPlaying ? (1 + energy * 0.3) : 1)); 
                     dummy.updateMatrix();
                     meshRef.current.setMatrixAt(i, dummy.matrix);
                 });
@@ -202,11 +233,9 @@
 
             return (
                 <instancedMesh ref={meshRef} args={[null, null, count]}>
-                    {/* 核心修改：将方块(boxGeometry)改为球体(sphereGeometry) */}
-                    {/* args=[半径, 横向细分, 纵向细分] - 细分不用太高，保持一点点棱角更像糖果 */}
-                    <sphereGeometry args={[0.7, 16, 16]} />
-                    {/* 材质优化：磨砂Q弹糖果感 - 增加粗糙度，降低金属感 */}
-                    <meshStandardMaterial roughness={0.4} metalness={0.2} emissive="#444" emissiveIntensity={0.1} />
+                    <boxGeometry args={[1, 0.8, 1]} />
+                    {/* 材质优化：水晶质感，高光泽，低粗糙度 */}
+                    <meshStandardMaterial roughness={0.1} metalness={0.6} emissive="#444" emissiveIntensity={0.1} />
                 </instancedMesh>
             );
         };
@@ -241,6 +270,7 @@
 
             return (
                 <>
+                    {/* 环境光 & 补光系统 */}
                     <ambientLight intensity={1.2} color="#ffe" />
                     <directionalLight position={[0, 0, 20]} intensity={3} color="#fff8e7" />
                     <directionalLight position={[0, 0, -20]} intensity={2} color="#ccffcc" />
@@ -249,11 +279,12 @@
                     <spotLight position={[0, 50, 0]} intensity={60} angle={0.6} color={colors[0]} penumbra={0.5} />
                     <pointLight position={[0, 10, 0]} intensity={15} distance={30} color="#ffaa00" />
                     
-                    {/* 增加了一点粒子数量，让树更茂密 */}
-                    <CatVoxels count={2400} colors={colors} mode={mode} isPlaying={playing} />
+                    <CatVoxels count={2200} colors={colors} mode={mode} isPlaying={playing} />
                     
+                    {/* 雪花优化：稍微调小一点，更细腻 */}
                     <Sparkles count={1000} scale={[100, 100, 100]} size={4} speed={0.5} opacity={0.8} color="#fff" />
                     
+                    {/* 3D 文字：去掉上层UI后，这个是唯一的主角，位置微调 */}
                     <group position={[0, -28, 0]}>
                         <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
                             <Center>
@@ -269,8 +300,7 @@
                     </group>
 
                     <EffectComposer disableNormalPass>
-                        {/* 辉光阈值稍微调高，让糖果的边缘发光更明显 */}
-                        <Bloom luminanceThreshold={0.6} mipmapBlur intensity={1.8} radius={0.6} />
+                        <Bloom luminanceThreshold={0.55} mipmapBlur intensity={1.5} radius={0.5} />
                         <Vignette eskil={false} offset={0.1} darkness={0.7} />
                     </EffectComposer>
                 </>
@@ -279,6 +309,7 @@
 
         const App = () => {
             const [mode, setMode] = useState('TREE');
+            // 默认颜色优化：经典的红、绿、金
             const [colors, setColors] = useState([new THREE.Color('#ea4630'), new THREE.Color('#2d5a27'), new THREE.Color('#FFD700')]);
             
             useEffect(() => {
