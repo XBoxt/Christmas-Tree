@@ -3,36 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For WQC | Eternal Edition</title>
+    <title>For WQC | Ultimate Surprise</title>
     <style>
         :root { --neon-gold: #ffd700; --neon-green: #00ff9d; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #020202; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; }
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #050505; overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
         
-        /* UI 层 */
+        /* UI 样式 */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
         
-        .header { pointer-events: auto; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); display: inline-block; animation: slideDown 1.5s cubic-bezier(0.19, 1, 0.22, 1); margin-top: 10px; }
-        h1 { margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #fff 0%, var(--neon-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .sub-text { font-size: 0.75rem; letter-spacing: 2px; color: rgba(255, 255, 255, 0.7); margin-top: 5px; text-transform: uppercase; font-weight: 600; }
+        .header-panel { 
+            pointer-events: auto; background: rgba(0,0,0,0.4); backdrop-filter: blur(12px); 
+            padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
+            display: inline-block; margin-top: 10px; text-align: left;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        h1 { margin: 0; font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #fff 0%, var(--neon-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub-text { font-size: 0.8rem; letter-spacing: 2px; color: rgba(255, 255, 255, 0.7); margin-top: 5px; font-weight: 600; }
 
-        /* 按钮组 */
-        .actions { pointer-events: auto; display: flex; gap: 10px; flex-wrap: wrap; animation: slideUp 1.5s cubic-bezier(0.19, 1, 0.22, 1); margin-bottom: 20px; }
-        .btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.3s ease; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
-        .btn:hover { background: var(--neon-gold); color: black; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); transform: translateY(-2px); }
-        .btn:active { transform: translateY(0); }
+        /* 按钮区 */
+        .actions { pointer-events: auto; display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn { 
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); 
+            color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; 
+            font-size: 0.9rem; font-weight: 700; transition: all 0.2s ease; 
+            backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center;
+        }
+        .btn:active { transform: scale(0.95); background: rgba(255, 215, 0, 0.2); }
+        .btn.primary { border-color: var(--neon-gold); color: var(--neon-gold); }
 
         /* Loading */
-        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
-        .loading-text { color: var(--neon-green); font-family: monospace; letter-spacing: 3px; font-size: 1.1rem; animation: pulse 1s infinite; margin-bottom: 10px; font-weight: bold; }
-        .loading-tip { color: #666; font-size: 0.8rem; font-family: sans-serif; }
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        .loading-text { color: var(--neon-green); font-family: monospace; letter-spacing: 3px; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
+        .progress-bar { width: 200px; height: 4px; background: #333; border-radius: 2px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { width: 50%; height: 100%; background: var(--neon-green); animation: loadAnim 2s infinite ease-in-out; }
 
-        @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+        /* 错误提示 */
+        #error-log { position: absolute; top: 0; left: 0; width: 100%; background: rgba(255,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 1000; display: none; }
+
+        @keyframes loadAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     </style>
-    
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+
     <script type="importmap">
     {
         "imports": {
@@ -48,46 +60,57 @@
     </script>
 </head>
 <body>
+    <div id="error-log"></div>
     <div id="loader">
-        <div class="loading-text">SYSTEM INITIALIZING...</div>
-        <div class="loading-tip">Preparing Magic for WQC</div>
+        <div class="loading-text">INITIALIZING...</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div style="color: #666; font-size: 12px; margin-top: 10px">Ver 5.0 China Optimized</div>
     </div>
 
     <div id="ui-layer">
-        <div class="header">
+        <div class="header-panel">
             <h1>TO WQC</h1>
             <div class="sub-text">MERRY CHRISTMAS · ETERNAL EDITION</div>
         </div>
-        
         <div class="actions">
-            <div id="btn-play" class="btn">▶ MUSIC</div>
+            <div id="btn-play" class="btn primary">▶ PLAY MUSIC</div>
             <div id="btn-remix" class="btn">🎨 REMIX</div>
-            <div id="btn-morph" class="btn">✨ MORPH</div>
-            <div id="btn-snap" class="btn">📷 SNAP</div>
+            <div id="btn-morph" class="btn">✨ SHAPE</div>
+            <div id="btn-snap" class="btn">📷 SAVE</div>
         </div>
     </div>
     
-    <div id="canvas-container"></div>
+    <div id="canvas-container" style="position: absolute; top:0; left:0; width:100%; height:100%"></div>
+
+    <script>
+        window.onerror = function(msg, url, line) {
+            const el = document.getElementById('error-log');
+            el.style.display = 'block';
+            el.innerHTML += `Error: ${msg} <br>`;
+            // 如果报错，强制移除 loader 让人至少看到尝试加载的结果
+            document.getElementById('loader').style.display = 'none';
+        };
+        // 5秒强制超时保护：如果5秒还在loading，直接关掉loader
+        setTimeout(() => {
+            const l = document.getElementById('loader');
+            if(l && l.style.display !== 'none') {
+                l.style.opacity = 0;
+                setTimeout(()=>l.style.display='none', 500);
+            }
+        }, 5000);
+    </script>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useMemo, useRef, useEffect } from 'react';
+        import React, { useState, useMemo, useRef, useEffect, Suspense } from 'react';
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { OrbitControls, Text, Float, Sparkles, Stars, CameraShake } from '@react-three/drei';
+        import { OrbitControls, Text3D, Center, Float, Sparkles, Stars, CameraShake } from '@react-three/drei';
         import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
-
-        // --- 强制移除 Loading 补丁 (防止卡死) ---
-        setTimeout(() => {
-            const l = document.getElementById('loader');
-            if(l) { l.style.opacity = 0; setTimeout(() => l.style.display='none', 800); }
-        }, 4000); // 4秒后无论如何都进入
 
         // --- Audio Engine ---
         class AudioEngine {
-            constructor() {
-                this.ctx = null; this.analyser = null; this.dataArray = null; this.isPlaying = false;
-            }
+            constructor() { this.ctx = null; this.analyser = null; this.dataArray = null; }
             init() {
                 if (this.ctx) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
@@ -99,27 +122,21 @@
             playMelody() {
                 if (!this.ctx) this.init();
                 if (this.ctx.state === 'suspended') this.ctx.resume();
-                this.isPlaying = true;
+                // 简单的旋律数据
                 const notes = [
-                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},{f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
-                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8},
-                    {f:698,d:0.2},{f:698,d:0.2},{f:698,d:0.2},{f:698,d:0.2},{f:698,d:0.2},{f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.2},
-                    {f:783,d:0.2},{f:783,d:0.2},{f:698,d:0.2},{f:587,d:0.2},{f:523,d:0.8}
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
+                    {f:659,d:0.2},{f:659,d:0.2},{f:659,d:0.4},
+                    {f:659,d:0.2},{f:783,d:0.2},{f:523,d:0.2},{f:587,d:0.2},{f:659,d:0.8}
                 ];
                 let time = this.ctx.currentTime;
-                const loop = [...notes, {f:0,d:0.5}, ...notes];
+                // 循环3遍
+                const loop = [...notes, {f:0,d:0.5}, ...notes, {f:0,d:0.5}, ...notes];
                 loop.forEach((n, i) => {
                     if(n.f > 0) {
                         const osc = this.ctx.createOscillator();
                         const gain = this.ctx.createGain();
-                        const filter = this.ctx.createBiquadFilter();
-                        osc.type = i%3===0?'triangle':'sawtooth'; 
-                        osc.frequency.value = n.f;
-                        filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(200, time);
-                        filter.frequency.linearRampToValueAtTime(n.f * 3.5, time + 0.1); 
-                        osc.connect(filter); filter.connect(gain);
-                        gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
+                        osc.type = 'triangle'; osc.frequency.value = n.f;
+                        osc.connect(gain); gain.connect(this.analyser); this.analyser.connect(this.ctx.destination);
                         osc.start(time);
                         gain.gain.setValueAtTime(0, time);
                         gain.gain.linearRampToValueAtTime(0.2, time + 0.05);
@@ -138,137 +155,151 @@
         }
         const audioSystem = new AudioEngine();
 
-        // --- Cat Voxels ---
-        const CatVoxels = ({ count = 2500, colors, mode, isPlaying }) => {
-            const bodyRef = useRef(); const headRef = useRef();
+        // --- 核心猫咪粒子 ---
+        const CatVoxels = ({ count = 2200, colors, mode, isPlaying }) => {
+            const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
+            
             const particles = useMemo(() => {
                 const temp = [];
                 for (let i = 0; i < count; i++) {
                     const t = i / count;
-                    const angle = t * Math.PI * 30;
-                    const radius = (1 - t) * 16;
-                    const y = t * 45 - 22;
+                    // 树形态
+                    const angle = t * Math.PI * 25;
+                    const radius = (1 - t) * 15;
+                    const y = t * 40 - 20;
                     const treePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
-                    const scatterPos = new THREE.Vector3((Math.random()-0.5)*90, (Math.random()-0.5)*70, (Math.random()-0.5)*90);
+                    // 散开形态
+                    const scatterPos = new THREE.Vector3((Math.random()-0.5)*80, (Math.random()-0.5)*60, (Math.random()-0.5)*80);
                     temp.push({ treePos, scatterPos, pos: scatterPos.clone(), speed: Math.random()*0.5+0.5, phase: Math.random()*Math.PI*2, colorType: Math.random() });
                 }
                 return temp;
             }, [count]);
 
             useEffect(() => {
-                if(!bodyRef.current) return;
+                if(!meshRef.current) return;
                 particles.forEach((p, i) => {
                     const c = p.colorType<0.3?colors[0]:(p.colorType<0.6?colors[1]:colors[2]);
-                    bodyRef.current.setColorAt(i, c); headRef.current.setColorAt(i, c);
+                    meshRef.current.setColorAt(i, c);
                 });
-                bodyRef.current.instanceColor.needsUpdate = true; headRef.current.instanceColor.needsUpdate = true;
+                meshRef.current.instanceColor.needsUpdate = true;
             }, [colors]);
 
             useFrame((state, delta) => {
-                if(!bodyRef.current) return;
+                if(!meshRef.current) return;
                 const energy = audioSystem.getEnergy();
-                const pulse = 1 + energy * 0.6;
+                const pulse = 1 + energy * 0.5;
                 const time = state.clock.elapsedTime;
                 const isTree = mode === 'TREE';
 
                 particles.forEach((p, i) => {
                     const targetBase = isTree ? p.treePos : p.scatterPos;
                     let target = targetBase.clone();
-                    if (isTree) {
-                        const rot = time * 0.15;
-                        target.applyAxisAngle(new THREE.Vector3(0,1,0), rot);
+                    if(isTree) {
+                        target.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.1);
                         target.multiplyScalar(pulse);
                     }
-                    p.pos.lerp(target, delta * 3 * p.speed);
+                    p.pos.lerp(target, delta * 2.5 * p.speed);
+                    
                     let bounce = 0;
-                    if (isTree && isPlaying) bounce = Math.sin(time * 15 + p.phase) * (0.2 + energy * 2);
+                    if(isTree && isPlaying) bounce = Math.sin(time * 12 + p.phase) * (0.2 + energy);
+                    
                     dummy.position.copy(p.pos); dummy.position.y += bounce;
-                    dummy.lookAt(0, p.pos.y, 0);
-                    const scale = 0.4 * (1 + energy * 0.3);
-                    dummy.scale.setScalar(scale);
+                    dummy.lookAt(0, p.pos.y, 0); 
+                    dummy.scale.setScalar(0.4 * (1 + energy * 0.3));
                     dummy.updateMatrix();
-                    bodyRef.current.setMatrixAt(i, dummy.matrix); headRef.current.setMatrixAt(i, dummy.matrix);
+                    meshRef.current.setMatrixAt(i, dummy.matrix);
                 });
-                bodyRef.current.instanceMatrix.needsUpdate = true; headRef.current.instanceMatrix.needsUpdate = true;
+                meshRef.current.instanceMatrix.needsUpdate = true;
             });
-            const mat = <meshStandardMaterial roughness={0.2} metalness={0.8} />;
+
             return (
-                <group>
-                    <instancedMesh ref={bodyRef} args={[null, null, count]}>{mat}<boxGeometry args={[1, 0.8, 1.2]} /></instancedMesh>
-                    <instancedMesh ref={headRef} args={[null, null, count]}>{mat}<primitive object={new THREE.BoxGeometry(0.8, 0.8, 0.8).translate(0, 0.8, 0.5)} attach="geometry" /></instancedMesh>
-                </group>
+                <instancedMesh ref={meshRef} args={[null, null, count]}>
+                    <boxGeometry args={[1, 0.8, 1]} />
+                    <meshStandardMaterial roughness={0.2} metalness={0.8} />
+                </instancedMesh>
             );
         };
 
         const Scene = ({ colors, mode, setMode }) => {
             const [playing, setPlaying] = useState(false);
+            
+            // 绑定事件
             useEffect(() => {
                 const btnPlay = document.getElementById('btn-play');
+                const btnRemix = document.getElementById('btn-remix');
                 const btnSnap = document.getElementById('btn-snap');
                 const btnMorph = document.getElementById('btn-morph');
-                const playFn = () => { if(!playing) { setPlaying(true); audioSystem.playMelody(); btnPlay.innerText = "▶ PLAYING..."; btnPlay.style.opacity = 0.6; } };
-                const snapFn = () => {
-                    const canvas = document.querySelector('canvas');
-                    if(canvas) { const link = document.createElement('a'); link.download = 'WQC-Christmas.png'; link.href = canvas.toDataURL('image/png'); link.click(); }
-                };
-                btnPlay.onclick = playFn; btnSnap.onclick = snapFn; btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
-            }, [playing]);
 
-            useFrame((state) => {
-                if (!playing) return;
-                const t = state.clock.elapsedTime;
-                state.camera.position.lerp(new THREE.Vector3(0, 0, 60 + Math.sin(t*0.2)*5), 0.02);
-                state.camera.lookAt(0, 0, 0);
-            });
+                btnPlay.onclick = () => { if(!playing) { setPlaying(true); audioSystem.playMelody(); btnPlay.innerText = "PLAYING..."; btnPlay.style.opacity = 0.5; } };
+                btnRemix.onclick = () => window.changeColors(); // 调用外部函数
+                btnMorph.onclick = () => setMode(prev => prev==='TREE'?'SCATTER':'TREE');
+                btnSnap.onclick = () => {
+                    const canvas = document.querySelector('canvas');
+                    const link = document.createElement('a'); link.download = 'WQC-Christmas.png'; link.href = canvas.toDataURL('image/png'); link.click();
+                };
+            }, [playing]);
 
             return (
                 <>
-                    <ambientLight intensity={0.4} />
-                    <pointLight position={[10, 20, 10]} intensity={80} color={colors[1]} />
-                    <pointLight position={[-10, -10, -10]} intensity={50} color={colors[2]} />
-                    <spotLight position={[0, 50, 0]} intensity={200} angle={0.5} penumbra={1} color={colors[0]} castShadow />
-                    <CatVoxels count={3000} colors={colors} mode={mode} isPlaying={playing} />
-                    <Sparkles count={800} scale={60} size={5} speed={0.4} opacity={0.6} color={colors[2]} />
-                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-                    <group position={[0, -26, 0]}>
-                        <Float speed={2} rotationIntensity={0.2} floatIntensity={0.2}>
-                            {/* 关键修改：移除了 font 属性，使用系统默认字体，防止被墙 */}
-                            <Text fontSize={8} color={colors[0]} anchorX="center" anchorY="middle" outlineWidth={0.2} outlineColor={colors[2]} fontWeight="bold">
-                                TO WQC
-                            </Text>
+                    <ambientLight intensity={0.5} />
+                    <pointLight position={[10, 20, 10]} intensity={50} color={colors[1]} />
+                    <spotLight position={[0, 50, 0]} intensity={100} angle={0.5} color={colors[0]} />
+                    
+                    <CatVoxels count={2500} colors={colors} mode={mode} isPlaying={playing} />
+                    <Sparkles count={500} scale={50} size={5} color={colors[2]} opacity={0.6} />
+                    
+                    {/* 3D 文字：使用可靠的 Font URL (jsdelivr) */}
+                    <group position={[0, -25, 0]}>
+                        <Float speed={2}>
+                            <Center>
+                                <Text3D 
+                                    font="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json"
+                                    size={5} height={0.5} curveSegments={12}
+                                >
+                                    TO WQC
+                                    <meshStandardMaterial color={colors[0]} emissive={colors[0]} emissiveIntensity={0.5} />
+                                </Text3D>
+                            </Center>
                         </Float>
                     </group>
+
                     <EffectComposer disableNormalPass>
-                        <Bloom luminanceThreshold={0.8} mipmapBlur intensity={1.8} radius={0.4} />
-                        <ChromaticAberration offset={[0.002, 0.002]} />
+                        <Bloom luminanceThreshold={0.8} mipmapBlur intensity={1.5} radius={0.5} />
                         <Vignette eskil={false} offset={0.1} darkness={1.1} />
                     </EffectComposer>
-                    <CameraShake yawFrequency={0.1} pitchFrequency={0.1} rollFrequency={0.1} intensity={playing ? 0.2 : 0} />
                 </>
             );
         };
 
         const App = () => {
             const [mode, setMode] = useState('TREE');
-            const getColors = () => {
-                const h = Math.random();
-                return [ new THREE.Color().setHSL(h, 1, 0.6), new THREE.Color().setHSL((h+0.6)%1, 0.8, 0.5), new THREE.Color().setHSL((h+0.3)%1, 1, 0.8) ];
-            };
-            const [colors, setColors] = useState(getColors());
+            const [colors, setColors] = useState([new THREE.Color('#FFD700'), new THREE.Color('#00FF9D'), new THREE.Color('#FF0080')]);
+            
             useEffect(() => {
-                document.getElementById('btn-remix').onclick = () => setColors(getColors());
+                // 暴露给外部按钮使用
+                window.changeColors = () => {
+                    setColors([
+                        new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)),
+                        new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16)),
+                        new THREE.Color('#'+Math.floor(Math.random()*16777215).toString(16))
+                    ]);
+                };
+                // 成功加载后移除 loader
                 const l = document.getElementById('loader');
-                // 正常加载完毕移除 loader
-                if(l) { setTimeout(() => { l.style.opacity = 0; setTimeout(() => l.style.display='none', 800); }, 1000); }
+                if(l) setTimeout(() => { l.style.opacity = 0; setTimeout(()=>l.style.display='none', 500); }, 500);
             }, []);
+
             return (
-                <Canvas dpr={[1, 1.5]} gl={{ antialias: false }} camera={{ position: [0, 0, 10], fov: 45 }}>
-                    <Scene colors={colors} mode={mode} setMode={setMode} />
-                    <OrbitControls enablePan={false} maxDistance={90} minDistance={10} />
+                <Canvas dpr={[1, 1.5]} gl={{ antialias: false }} camera={{ position: [0, 0, 60], fov: 45 }}>
+                    <Suspense fallback={null}>
+                        <Scene colors={colors} mode={mode} setMode={setMode} />
+                    </Suspense>
+                    <OrbitControls enablePan={false} maxDistance={90} minDistance={10} autoRotate={false} />
                 </Canvas>
             );
         };
+
         const root = createRoot(document.getElementById('canvas-container'));
         root.render(<App />);
     </script>
