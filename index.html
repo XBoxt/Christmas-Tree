@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For WQC | Merry Christmas!</title>
+    <title>For WQC | Christmas with Candy & Stockings</title>
     <style>
         :root { --neon-gold: #ffd700; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; 
-            /* 背景微调，让中心更暖一点 */
-            background: radial-gradient(circle at 50% 40%, #3a0a0c 0%, #1a2e16 50%, #051405 100%);
+            /* 背景更深邃，突出装饰品的亮色 */
+            background: radial-gradient(circle at 50% 40%, #2b080a 0%, #152512 50%, #020a02 100%);
             overflow: hidden; font-family: -apple-system, sans-serif; user-select: none; }
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 40px; }
@@ -55,7 +55,7 @@
 <body>
     <div id="error-log"></div>
     <div id="loader">
-        <div class="loading-text">DECORATING TREE</div>
+        <div class="loading-text">HANGING STOCKINGS</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
     </div>
 
@@ -91,10 +91,10 @@
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { OrbitControls, Text3D, Center, Float, Sparkles } from '@react-three/drei';
+        import { OrbitControls, Text3D, Center, Float, Sparkles, Text } from '@react-three/drei';
         import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
-        // --- Audio Engine (不变) ---
+        // --- Audio Engine ---
         class AudioEngine {
             constructor() { 
                 this.ctx = null; this.analyser = null; this.dataArray = null;
@@ -138,44 +138,26 @@
         }
         const audioSystem = new AudioEngine();
 
-        // --- CatVoxels (优化版：加入装饰球逻辑) ---
+        // --- CatVoxels (Cute Beads Tree) ---
         const CatVoxels = ({ count = 2500, colors, mode, isPlaying }) => {
             const meshRef = useRef();
             const dummy = useMemo(() => new THREE.Object3D(), []);
             
-            // 定义经典的圣诞装饰色：红、金、银白
-            const ornamentColors = useMemo(() => [
-                new THREE.Color('#ff1a1a'), // Bright Red
-                new THREE.Color('#ffd700'), // Gold
-                new THREE.Color('#ffffff')  // Silver/White
-            ], []);
-
             const particles = useMemo(() => {
                 const temp = [];
                 for (let i = 0; i < count; i++) {
                     const t = i / count;
-                    // 调整角度生成，让树看起来更自然随机一点
                     const angle = t * Math.PI * 30 + Math.random() * 0.5; 
                     const radius = (1 - t) * 16;
                     const y = t * 42 - 21;
                     const treePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
                     const scatterPos = new THREE.Vector3((Math.random()-0.5)*90, (Math.random()-0.5)*70, (Math.random()-0.5)*90);
                     
-                    // --- 新增逻辑：约12%的概率成为特殊装饰球 ---
-                    const isOrnament = Math.random() < 0.12;
-                    let fixedColor = null;
-                    if (isOrnament) {
-                        // 随机分配一种经典圣诞色
-                        fixedColor = ornamentColors[Math.floor(Math.random() * ornamentColors.length)];
-                    }
-
                     temp.push({ 
                         treePos, scatterPos, pos: scatterPos.clone(), 
                         speed: Math.random()*0.4+0.6, 
                         phase: Math.random()*Math.PI*2, 
-                        colorType: Math.random(),
-                        isOrnament, // 标记是否为装饰
-                        fixedColor  // 如果是装饰，存储它的固定颜色
+                        colorType: Math.random()
                     });
                 }
                 return temp;
@@ -184,18 +166,11 @@
             useEffect(() => {
                 if(!meshRef.current) return;
                 particles.forEach((p, i) => {
-                    let c;
-                    if (p.isOrnament) {
-                        // 如果是装饰球，使用它固定的圣诞色，忽略外部主题色
-                        c = p.fixedColor;
-                    } else {
-                        // 普通珠子使用可变的主题色
-                        c = p.colorType<0.33?colors[0]:(p.colorType<0.66?colors[1]:colors[2]);
-                    }
+                    const c = p.colorType<0.33?colors[0]:(p.colorType<0.66?colors[1]:colors[2]);
                     meshRef.current.setColorAt(i, c);
                 });
                 meshRef.current.instanceColor.needsUpdate = true;
-            }, [colors]); // 依赖项仍然是 colors，但内部逻辑会过滤掉装饰球
+            }, [colors]);
 
             useFrame((state, delta) => {
                 if(!meshRef.current) return;
@@ -215,19 +190,11 @@
                     
                     let bounce = 0;
                     if(isTree && isPlaying) {
-                        // 装饰球跳动幅度稍微小一点，显得更有重量感
-                        const bounceMult = p.isOrnament ? 3 : 5;
-                        bounce = Math.sin(time * 12 + p.phase) * (0.1 + energy * bounceMult);
+                        bounce = Math.sin(time * 12 + p.phase) * (0.1 + energy * 4);
                     }
-                    
                     dummy.position.copy(p.pos); dummy.position.y += bounce;
                     dummy.lookAt(0, p.pos.y, 0); 
-
-                    // --- 新增逻辑：装饰球尺寸更大 ---
-                    const baseScale = p.isOrnament ? 0.75 : 0.5; 
-                    // 音乐播放时，尺寸也会随能量轻微波动
-                    dummy.scale.setScalar(baseScale * (isPlaying ? (1 + energy * 0.25) : 1)); 
-                    
+                    dummy.scale.setScalar(0.5 * (isPlaying ? (1 + energy * 0.25) : 1)); 
                     dummy.updateMatrix();
                     meshRef.current.setMatrixAt(i, dummy.matrix);
                 });
@@ -237,13 +204,85 @@
             return (
                 <instancedMesh ref={meshRef} args={[null, null, count]}>
                     <sphereGeometry args={[0.7, 16, 16]} />
-                    {/* 材质优化：提高金属感和光滑度，让装饰球看起来更闪亮 */}
-                    <meshStandardMaterial roughness={0.3} metalness={0.6} emissive="#555" emissiveIntensity={0.2} />
+                    <meshStandardMaterial roughness={0.3} metalness={0.4} emissive="#555" emissiveIntensity={0.2} />
                 </instancedMesh>
             );
         };
 
-        // --- TopStar Component (保持不变) ---
+        // --- NEW: Decorations Component (Stockings, Candy, etc.) ---
+        const Decorations = ({ mode, isPlaying }) => {
+            // 定义我们想要的装饰品 Emoji
+            const items = useMemo(() => {
+                const emojis = ['🧦', '🍬', '🍭', '🎀', '🔔', '🎁', '🍪'];
+                const temp = [];
+                // 生成 45 个装饰品
+                for(let i=0; i<45; i++) {
+                    const t = Math.random() * 0.9 + 0.05; // height factor
+                    const angle = Math.random() * Math.PI * 2;
+                    // 让装饰品稍微浮在树的表面外面 (Radius * 1.1)
+                    const radius = (1 - t) * 16 * 1.2; 
+                    const y = t * 42 - 21;
+                    const basePos = new THREE.Vector3(Math.cos(angle)*radius, y, Math.sin(angle)*radius);
+                    
+                    temp.push({
+                        basePos,
+                        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+                        scale: 1.5 + Math.random() * 0.5, // 随机大小
+                        rotationOffset: Math.random() * Math.PI * 2,
+                        bobSpeed: 1 + Math.random()
+                    });
+                }
+                return temp;
+            }, []);
+
+            const groupRef = useRef();
+
+            useFrame((state) => {
+                if(!groupRef.current || mode !== 'TREE') return;
+                const time = state.clock.elapsedTime;
+                
+                // 遍历每个装饰品，手动更新它们的位置以跟随树的旋转
+                groupRef.current.children.forEach((child, i) => {
+                    const item = items[i];
+                    // 复制原始位置
+                    const pos = item.basePos.clone();
+                    
+                    // 应用与树相同的旋转逻辑 (time * 0.15)
+                    pos.applyAxisAngle(new THREE.Vector3(0,1,0), time * 0.15);
+                    
+                    // 添加一点上下浮动，看起来更可爱
+                    pos.y += Math.sin(time * item.bobSpeed + item.rotationOffset) * 0.3;
+
+                    child.position.copy(pos);
+                    
+                    // 让装饰品始终面朝外 (从中心看向位置)，稍微修正角度以便看清Emoji
+                    child.lookAt(0, pos.y, 0);
+                    // 修正 Text 的默认朝向，使其正面朝外
+                    child.rotation.y += Math.PI; 
+                });
+            });
+
+            if (mode !== 'TREE') return null; // 只有在树模式下才显示
+
+            return (
+                <group ref={groupRef}>
+                    {items.map((item, i) => (
+                        <Text
+                            key={i}
+                            fontSize={item.scale}
+                            anchorX="center"
+                            anchorY="middle"
+                            outlineWidth={0.08}
+                            outlineColor="#3a0a0c" // 深红色描边，更有质感
+                        >
+                            {item.emoji}
+                        </Text>
+                    ))}
+                </group>
+            );
+        };
+
+        // --- TopStar Component ---
         const TopStar = ({ isPlaying }) => {
             const starRef = useRef();
             const lightRef = useRef();
@@ -298,19 +337,19 @@
 
             return (
                 <>
-                    {/* 灯光微调，更暖一点 */}
                     <ambientLight intensity={1.0} color="#fff0e0" />
                     <directionalLight position={[0, 10, 20]} intensity={2.5} color="#fffae0" />
                     <directionalLight position={[0, 0, -20]} intensity={1.5} color="#cceeff" />
-                    {/* 侧光增加一点红色调，营造节日气氛 */}
-                    <directionalLight position={[-20, 5, 0]} intensity={1.8} color="#ffccee" />
-                    <directionalLight position={[20, 5, 0]} intensity={1.8} color="#eeccee" />
                     <spotLight position={[0, 50, 0]} intensity={50} angle={0.5} color={colors[0]} penumbra={1} />
                     <pointLight position={[0, 0, 0]} intensity={10} distance={40} color="#ffaa00" />
                     
-                    {/* 增加了一点点粒子数量 */}
-                    <CatVoxels count={2600} colors={colors} mode={mode} isPlaying={playing} />
+                    {/* 基础树身 */}
+                    <CatVoxels count={2400} colors={colors} mode={mode} isPlaying={playing} />
                     
+                    {/* 新增：圣诞装饰品 (袜子、糖果) */}
+                    <Decorations mode={mode} isPlaying={playing} />
+
+                    {/* 树顶星星 */}
                     { mode === 'TREE' && <TopStar isPlaying={playing} /> }
                     
                     <Sparkles count={1200} scale={[110, 110, 110]} size={3} speed={0.4} opacity={0.7} color="#fff" />
@@ -339,7 +378,7 @@
 
         const App = () => {
             const [mode, setMode] = useState('TREE');
-            // 初始颜色调整为经典的红绿金
+            // 经典圣诞配色
             const [colors, setColors] = useState([new THREE.Color('#d42424'), new THREE.Color('#236e23'), new THREE.Color('#FFD700')]);
             
             useEffect(() => {
